@@ -1,10 +1,13 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../config";
+import { Inventory } from "../systems/Inventory";
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 80;
+  private inventory = new Inventory();
+  private inventoryText!: Phaser.GameObjects.Text;
 
   constructor() {
     super("Game");
@@ -28,6 +31,12 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
 
     this.cameras.main.startFollow(this.player, true);
+
+    this.createInventoryHud();
+    this.spawnWoodCollectible(
+      this.cameras.main.width / 2 + 60,
+      this.cameras.main.height / 2 + 40
+    );
   }
 
   update() {
@@ -39,6 +48,37 @@ export class GameScene extends Phaser.Scene {
 
     if (this.cursors.up.isDown) body.setVelocityY(-this.speed);
     else if (this.cursors.down.isDown) body.setVelocityY(this.speed);
+  }
+
+  // Item colecionável "madeira": círculo azul que entra no inventário ao encostar.
+  private spawnWoodCollectible(x: number, y: number) {
+    const wood = this.add.circle(x, y, TILE_SIZE / 2, 0x3399ff) as Phaser.GameObjects.Arc & {
+      body: Phaser.Physics.Arcade.Body;
+    };
+    wood.setData("itemId", "madeira");
+
+    this.physics.add.existing(wood);
+    wood.body.setCircle(TILE_SIZE / 2);
+
+    this.physics.add.overlap(this.player, wood, () => this.collectWood(wood));
+  }
+
+  private collectWood(wood: Phaser.GameObjects.Arc) {
+    this.inventory.add("madeira", 1);
+    this.updateInventoryHud();
+    wood.destroy();
+  }
+
+  private createInventoryHud() {
+    this.inventoryText = this.add
+      .text(4, 4, "", { fontSize: "10px", color: "#ffffff" })
+      .setScrollFactor(0)
+      .setDepth(10);
+    this.updateInventoryHud();
+  }
+
+  private updateInventoryHud() {
+    this.inventoryText.setText(`Madeira: ${this.inventory.getAmount("madeira")}`);
   }
 
   // Fundo xadrez: referência visual pra deixar óbvio quando o personagem está se movendo.
