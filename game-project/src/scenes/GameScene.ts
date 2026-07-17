@@ -26,6 +26,7 @@ export class GameScene extends Phaser.Scene {
   private inventoryPanel!: InventoryPanel;
   private inventoryToggleKey!: Phaser.Input.Keyboard.Key;
   private trees: Tree[] = [];
+  private treeColliders = new Map<Tree, Phaser.Physics.Arcade.Collider>();
 
   constructor() {
     super("Game");
@@ -198,10 +199,12 @@ export class GameScene extends Phaser.Scene {
     wood.destroy();
   }
 
-  // Árvore com HP: leva dano enquanto o jogador encosta nela, até morrer e virar madeira.
+  // Árvore com HP: leva dano enquanto o jogador encosta na copa, até morrer e virar madeira.
+  // O tronco tem colisor sólido separado, pra impedir o jogador de atravessar a árvore.
   private spawnTree(x: number, y: number) {
     const tree = new Tree(this, x, y, 2);
     this.trees.push(tree);
+    this.treeColliders.set(tree, this.physics.add.collider(this.player, tree.trunk));
   }
 
   private handleTreeHit(tree: Tree) {
@@ -214,6 +217,8 @@ export class GameScene extends Phaser.Scene {
 
     if (died) {
       this.trees = this.trees.filter((t) => t !== tree);
+      this.treeColliders.get(tree)?.destroy();
+      this.treeColliders.delete(tree);
       tree.destroy();
       this.spawnWoodCollectible(tree.x, tree.y);
     }
