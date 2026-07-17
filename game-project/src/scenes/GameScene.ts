@@ -3,6 +3,7 @@ import { TILE_SIZE } from "../config";
 import { Inventory } from "../systems/Inventory";
 import { InventoryPanel } from "../ui/InventoryPanel";
 import { Tree } from "../entities/Tree";
+import { ensureItemTextures, ITEM_TEXTURE_KEYS, ITEM_TEXTURE_SIZE } from "../textures/itemTextures";
 
 const TREE_HIT_INTERVAL_MS = 1000;
 const TREE_HIT_DAMAGE = 1;
@@ -65,20 +66,23 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Item colecionável "madeira": círculo marrom claro que entra no inventário ao encostar.
+  // Item colecionável "madeira": sprite de toco de madeira que entra no inventário ao encostar.
   private spawnWoodCollectible(x: number, y: number) {
-    const wood = this.add.circle(x, y, TILE_SIZE / 2, 0xdeb887) as Phaser.GameObjects.Arc & {
+    ensureItemTextures(this);
+
+    const wood = this.add.image(x, y, ITEM_TEXTURE_KEYS.madeira) as Phaser.GameObjects.Image & {
       body: Phaser.Physics.Arcade.Body;
     };
+    wood.setScale(TILE_SIZE / ITEM_TEXTURE_SIZE);
     wood.setData("itemId", "madeira");
 
     this.physics.add.existing(wood);
-    wood.body.setCircle(TILE_SIZE / 2);
+    wood.body.setCircle(ITEM_TEXTURE_SIZE / 2);
 
     this.physics.add.overlap(this.player, wood, () => this.collectWood(wood));
   }
 
-  private collectWood(wood: Phaser.GameObjects.Arc) {
+  private collectWood(wood: Phaser.GameObjects.Image) {
     this.inventory.add("madeira", 1);
     this.inventoryPanel.refresh(this.inventory);
     wood.destroy();
