@@ -11,6 +11,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.createCheckerboardBackground();
+
     // Placeholder do personagem: um retângulo, até entrar sprite de verdade.
     this.player = this.add.rectangle(
       this.cameras.main.width / 2,
@@ -37,5 +39,27 @@ export class GameScene extends Phaser.Scene {
 
     if (this.cursors.up.isDown) body.setVelocityY(-this.speed);
     else if (this.cursors.down.isDown) body.setVelocityY(this.speed);
+  }
+
+  // Fundo xadrez: referência visual pra deixar óbvio quando o personagem está se movendo.
+  private createCheckerboardBackground() {
+    const cell = TILE_SIZE;
+    const textureKey = "checkerboard-tile";
+
+    if (!this.textures.exists(textureKey)) {
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0x2a2a2a, 1);
+      graphics.fillRect(0, 0, cell * 2, cell * 2);
+      graphics.fillStyle(0x3a3a3a, 1);
+      graphics.fillRect(0, 0, cell, cell);
+      graphics.fillRect(cell, cell, cell, cell);
+      graphics.generateTexture(textureKey, cell * 2, cell * 2);
+      graphics.destroy();
+    }
+
+    this.add
+      .tileSprite(0, 0, this.cameras.main.width, this.cameras.main.height, textureKey)
+      .setOrigin(0, 0)
+      .setDepth(-1);
   }
 }
