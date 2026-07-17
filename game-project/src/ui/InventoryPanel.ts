@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { Inventory } from "../systems/Inventory";
+import { ensureItemTextures, ITEM_TEXTURE_KEYS } from "../textures/itemTextures";
 
 const COLS = 5;
 const ROWS = 4;
@@ -9,11 +10,6 @@ const PADDING = 6;
 const TITLE_HEIGHT = 14;
 const MARGIN = 4;
 
-// Cor de exibição de cada item no inventário.
-const ITEM_COLORS: Record<string, number> = {
-  madeira: 0xdeb887
-};
-
 export class InventoryPanel {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
@@ -22,6 +18,7 @@ export class InventoryPanel {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    ensureItemTextures(scene);
 
     const width = PADDING * 2 + COLS * SLOT_SIZE + (COLS - 1) * SLOT_GAP;
     const height = TITLE_HEIGHT + PADDING * 2 + ROWS * SLOT_SIZE + (ROWS - 1) * SLOT_GAP;
@@ -80,14 +77,9 @@ export class InventoryPanel {
       const col = index % COLS;
       const slotX = PADDING + col * (SLOT_SIZE + SLOT_GAP);
       const slotY = TITLE_HEIGHT + PADDING + row * (SLOT_SIZE + SLOT_GAP);
-      const color = ITEM_COLORS[itemId] ?? 0xffffff;
-
-      const icon = this.scene.add.circle(
-        slotX + SLOT_SIZE / 2,
-        slotY + SLOT_SIZE / 2,
-        SLOT_SIZE / 2 - 3,
-        color
-      );
+      const textureKey = ITEM_TEXTURE_KEYS[itemId];
+      const icon = this.scene.add.image(slotX + SLOT_SIZE / 2, slotY + SLOT_SIZE / 2, textureKey);
+      icon.setDisplaySize(SLOT_SIZE - 4, SLOT_SIZE - 4);
 
       const countText = this.scene.add
         .text(slotX + SLOT_SIZE - 2, slotY + SLOT_SIZE - 2, String(amount), {

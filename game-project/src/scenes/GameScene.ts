@@ -3,19 +3,30 @@ import { TILE_SIZE } from "../config";
 import { Inventory } from "../systems/Inventory";
 import { InventoryPanel } from "../ui/InventoryPanel";
 import { Tree } from "../entities/Tree";
+import { ensureItemTextures, ITEM_TEXTURE_KEYS, ITEM_TEXTURE_SIZE } from "../textures/itemTextures";
+import { ensurePlayerTexture, PLAYER_TEXTURE_KEY } from "../textures/playerTexture";
+import {
+  ensurePlayerAttackTexture,
+  PLAYER_ATTACK_TEXTURE_KEY
+} from "../textures/playerAttackTexture";
 
 const TREE_HIT_INTERVAL_MS = 1000;
 const TREE_HIT_DAMAGE = 1;
 const DAMAGE_TEXT_LIFETIME_MS = 800;
+const ATTACK_FRAME_RATE = 3; // 3 frames a 3fps = 1 ciclo por segundo, alinhado ao intervalo de dano
+
+type Facing = "down" | "up" | "left" | "right";
 
 export class GameScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+  private player!: Phaser.GameObjects.Sprite & { body: Phaser.Physics.Arcade.Body };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 80;
+  private facing: Facing = "down";
   private inventory = new Inventory();
   private inventoryPanel!: InventoryPanel;
   private inventoryToggleKey!: Phaser.Input.Keyboard.Key;
   private trees: Tree[] = [];
+  private treeColliders = new Map<Tree, Phaser.Physics.Arcade.Collider>();
 
   constructor() {
     super("Game");
@@ -24,17 +35,20 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.createCheckerboardBackground();
 
-    // Placeholder do personagem: um retângulo, até entrar sprite de verdade.
-    this.player = this.add.rectangle(
+    ensurePlayerTexture(this);
+    this.player = this.physics.add.sprite(
       this.cameras.main.width / 2,
       this.cameras.main.height / 2,
-      TILE_SIZE,
-      TILE_SIZE,
-      0xffa500
-    ) as Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+      PLAYER_TEXTURE_KEY,
+      "down-idle"
+    ) as Phaser.GameObjects.Sprite & { body: Phaser.Physics.Arcade.Body };
 
-    this.physics.add.existing(this.player);
+    this.player.body.setSize(10, 12).setOffset(3, 7);
     this.player.body.setCollideWorldBounds(true);
+    this.player.setDepth(5);
+
+    ensurePlayerAttackTexture(this);
+    this.createPlayerAnimations();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -54,46 +68,146 @@ export class GameScene extends Phaser.Scene {
     const body = this.player.body;
     body.setVelocity(0);
 
-    if (this.cursors.left.isDown) body.setVelocityX(-this.speed);
-    else if (this.cursors.right.isDown) body.setVelocityX(this.speed);
+    let moving = false;
 
-    if (this.cursors.up.isDown) body.setVelocityY(-this.speed);
-    else if (this.cursors.down.isDown) body.setVelocityY(this.speed);
+    if (this.cursors.left.isDown) {
+      body.setVelocityX(-this.speed);
+      this.facing = "left";
+      moving = true;
+    } else if (this.cursors.right.isDown) {
+      body.setVelocityX(this.speed);
+      this.facing = "right";
+      moving = true;
+    }
+
+    if (this.cursors.up.isDown) {
+      body.setVelocityY(-this.speed);
+      this.facing = "up";
+      moving = true;
+    } else if (this.cursors.down.isDown) {
+      body.setVelocityY(this.speed);
+      this.facing = "down";
+      moving = true;
+    }
+
+    const touchedTree = this.handleTreeContact();
+
+    if (touchedTree) {
+      this.playAttackAnimation();
+    } else {
+      this.updatePlayerAnimation(moving);
+    }
 
     if (Phaser.Input.Keyboard.JustDown(this.inventoryToggleKey)) {
       this.inventoryPanel.toggle();
     }
   }
 
-  // Item colecionável "madeira": círculo marrom claro que entra no inventário ao encostar.
+  // Verifica contato com árvores no frame atual (não depende de collider persistente,
+  // já que precisamos saber "está encostando agora" pra decidir a animação de ataque).
+  private handleTreeContact(): boolean {
+    let touching = false;
+
+    for (const tree of [...this.trees]) {
+      if (this.physics.overlap(this.player, tree.canopy)) {
+        touching = true;
+        this.handleTreeHit(tree);
+      }
+    }
+
+    return touching;
+  }
+
+  private createPlayerAnimations() {
+    const walkFrames = (direction: "down" | "up" | "side") => [
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-a` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-idle` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-b` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-idle` }
+    ];
+
+    this.anims.create({ key: "walk-down", frames: walkFrames("down"), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: "walk-up", frames: walkFrames("up"), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: "walk-side", frames: walkFrames("side"), frameRate: 6, repeat: -1 });
+
+    const attackFrames = (direction: "down" | "up" | "side") => [
+      { key: PLAYER_ATTACK_TEXTURE_KEY, frame: `${direction}-windup` },
+      { key: PLAYER_ATTACK_TEXTURE_KEY, frame: `${direction}-strike` },
+      { key: PLAYER_ATTACK_TEXTURE_KEY, frame: `${direction}-recover` }
+    ];
+
+    this.anims.create({
+      key: "attack-down",
+      frames: attackFrames("down"),
+      frameRate: ATTACK_FRAME_RATE,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "attack-up",
+      frames: attackFrames("up"),
+      frameRate: ATTACK_FRAME_RATE,
+      repeat: -1
+    });
+    this.anims.create({
+      key: "attack-side",
+      frames: attackFrames("side"),
+      frameRate: ATTACK_FRAME_RATE,
+      repeat: -1
+    });
+  }
+
+  private playAttackAnimation() {
+    const isSide = this.facing === "left" || this.facing === "right";
+    this.player.setFlipX(this.facing === "left");
+    const animKey = isSide ? "attack-side" : `attack-${this.facing}`;
+    this.player.anims.play(animKey, true);
+  }
+
+  private updatePlayerAnimation(moving: boolean) {
+    const isSide = this.facing === "left" || this.facing === "right";
+    this.player.setFlipX(this.facing === "left");
+
+    if (moving) {
+      const animKey = isSide ? "walk-side" : `walk-${this.facing}`;
+      this.player.anims.play(animKey, true);
+    } else {
+      this.player.anims.stop();
+      const idleFrame = isSide ? "side-idle" : `${this.facing}-idle`;
+      this.player.setTexture(PLAYER_TEXTURE_KEY, idleFrame);
+    }
+  }
+
+  // Item colecionável "madeira": sprite de toco de madeira que entra no inventário ao encostar.
   private spawnWoodCollectible(x: number, y: number) {
-    const wood = this.add.circle(x, y, TILE_SIZE / 2, 0xdeb887) as Phaser.GameObjects.Arc & {
+    ensureItemTextures(this);
+
+    const wood = this.add.image(x, y, ITEM_TEXTURE_KEYS.madeira) as Phaser.GameObjects.Image & {
       body: Phaser.Physics.Arcade.Body;
     };
+    wood.setScale(TILE_SIZE / ITEM_TEXTURE_SIZE);
     wood.setData("itemId", "madeira");
 
     this.physics.add.existing(wood);
-    wood.body.setCircle(TILE_SIZE / 2);
+    wood.body.setCircle(ITEM_TEXTURE_SIZE / 2);
 
     this.physics.add.overlap(this.player, wood, () => this.collectWood(wood));
   }
 
-  private collectWood(wood: Phaser.GameObjects.Arc) {
+  private collectWood(wood: Phaser.GameObjects.Image) {
     this.inventory.add("madeira", 1);
     this.inventoryPanel.refresh(this.inventory);
     wood.destroy();
   }
 
-  // Árvore com HP: leva dano enquanto o jogador encosta nela, até morrer e virar madeira.
+  // Árvore com HP: leva dano enquanto o jogador encosta na copa, até morrer e virar madeira.
+  // O tronco tem colisor sólido separado, pra impedir o jogador de atravessar a árvore.
   private spawnTree(x: number, y: number) {
     const tree = new Tree(this, x, y, 2);
-    const collider = this.physics.add.overlap(this.player, tree.canopy, () =>
-      this.handleTreeHit(tree, collider)
-    );
     this.trees.push(tree);
+    this.treeColliders.set(tree, this.physics.add.collider(this.player, tree.trunk));
   }
 
-  private handleTreeHit(tree: Tree, collider: Phaser.Physics.Arcade.Collider) {
+  private handleTreeHit(tree: Tree) {
     const now = this.time.now;
     if (now - tree.lastHitAt < TREE_HIT_INTERVAL_MS) return;
     tree.lastHitAt = now;
@@ -102,8 +216,9 @@ export class GameScene extends Phaser.Scene {
     this.showDamageNumber(tree.x, tree.y - TILE_SIZE * 1.5, TREE_HIT_DAMAGE);
 
     if (died) {
-      collider.destroy();
       this.trees = this.trees.filter((t) => t !== tree);
+      this.treeColliders.get(tree)?.destroy();
+      this.treeColliders.delete(tree);
       tree.destroy();
       this.spawnWoodCollectible(tree.x, tree.y);
     }
