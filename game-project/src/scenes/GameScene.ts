@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
     let touching = false;
 
     for (const tree of [...this.trees]) {
-      if (this.physics.overlap(this.player, tree.canopy)) {
+      if (this.physics.overlap(this.player, tree.hitArea)) {
         touching = true;
         this.handleTreeHit(tree);
       }

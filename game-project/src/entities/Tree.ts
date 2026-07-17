@@ -1,24 +1,18 @@
 import Phaser from "phaser";
 import { TILE_SIZE } from "../config";
-import {
-  ensureTreeTexture,
-  TREE_TEXTURE_KEY,
-  TREE_TEXTURE_WIDTH,
-  TREE_TEXTURE_HEIGHT,
-  TREE_CANOPY_CENTER_Y,
-  TREE_CANOPY_RADIUS
-} from "../textures/treeTexture";
+import { ensureTreeTexture, TREE_TEXTURE_KEY, TREE_TEXTURE_WIDTH, TREE_CANOPY_RADIUS } from "../textures/treeTexture";
 
-type TreeSprite = Phaser.GameObjects.Image & { body: Phaser.Physics.Arcade.Body };
+type HitZone = Phaser.GameObjects.Zone & { body: Phaser.Physics.Arcade.Body };
 type TrunkZone = Phaser.GameObjects.Zone & { body: Phaser.Physics.Arcade.StaticBody };
 
 export class Tree {
   readonly x: number;
   readonly y: number;
-  // Copa: área de alcance de ataque (overlap, não bloqueia movimento).
-  readonly canopy: TreeSprite;
-  // Tronco: corpo sólido e estático, menor que a copa, que impede o jogador de atravessar a árvore.
+  // Área de alcance de ataque (overlap, não bloqueia movimento), centrada no tronco.
+  readonly hitArea: HitZone;
+  // Tronco: corpo sólido e estático, pequeno, que impede o jogador de atravessar a árvore.
   readonly trunk: TrunkZone;
+  private canopyImage: Phaser.GameObjects.Image;
   private hp: number;
   lastHitAt = 0;
 
@@ -31,20 +25,21 @@ export class Tree {
 
     const scale = (TILE_SIZE * 2) / TREE_TEXTURE_WIDTH;
 
-    this.canopy = scene.add.image(x, y, TREE_TEXTURE_KEY) as TreeSprite;
-    this.canopy.setScale(scale);
+    this.canopyImage = scene.add.image(x, y, TREE_TEXTURE_KEY);
+    this.canopyImage.setScale(scale);
 
-    scene.physics.add.existing(this.canopy);
-    const offsetX = TREE_TEXTURE_WIDTH / 2 - TREE_CANOPY_RADIUS;
-    const offsetY = TREE_CANOPY_CENTER_Y - TREE_CANOPY_RADIUS;
-    this.canopy.body.setCircle(TREE_CANOPY_RADIUS, offsetX, offsetY);
+    // Ambos concêntricos na base do tronco (posição visual real do tronco): o alcance de ataque
+    // é bem maior que o bloqueio sólido, então não importa de que lado o jogador se aproxima,
+    // ele fica sempre dentro do alcance de dano ao ser bloqueado pelo tronco.
+    const trunkY = y + TILE_SIZE * 0.4;
+    const hitRadius = TREE_CANOPY_RADIUS * scale;
+    const solidRadius = TILE_SIZE * 0.3;
 
-    // Tronco concêntrico com a copa (mesmo centro, raio menor): assim, seja qual for o lado por
-    // onde o jogador se aproxima, ele é bloqueado sempre dentro do alcance de dano da copa.
-    const canopyCenterY = y + (TREE_CANOPY_CENTER_Y - TREE_TEXTURE_HEIGHT / 2) * scale;
-    const solidRadius = TREE_CANOPY_RADIUS * scale * 0.5;
+    this.hitArea = scene.add.zone(x, trunkY, hitRadius * 2, hitRadius * 2) as HitZone;
+    scene.physics.add.existing(this.hitArea);
+    this.hitArea.body.setCircle(hitRadius);
 
-    this.trunk = scene.add.zone(x, canopyCenterY, solidRadius * 2, solidRadius * 2) as TrunkZone;
+    this.trunk = scene.add.zone(x, trunkY, solidRadius * 2, solidRadius * 2) as TrunkZone;
     scene.physics.add.existing(this.trunk, true);
     this.trunk.body.setCircle(solidRadius);
   }
@@ -56,7 +51,8 @@ export class Tree {
   }
 
   destroy() {
-    this.canopy.destroy();
+    this.canopyImage.destroy();
+    this.hitArea.destroy();
     this.trunk.destroy();
   }
 }
