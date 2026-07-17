@@ -8,7 +8,7 @@ export const PLAYER_FRAME_HEIGHT = 20;
 const DIRECTIONS = ["down", "up", "side"] as const;
 const POSES = ["a", "idle", "b"] as const;
 
-type Direction = (typeof DIRECTIONS)[number];
+export type Direction = (typeof DIRECTIONS)[number];
 type Pose = (typeof POSES)[number];
 
 const SKIN = "#e8b382";
@@ -43,12 +43,12 @@ export function ensurePlayerTexture(scene: Phaser.Scene) {
   canvasTexture.refresh();
 }
 
-function drawCharacter(
+export function drawCharacter(
   ctx: CanvasRenderingContext2D,
   originX: number,
   originY: number,
   direction: Direction,
-  pose: Pose
+  pose: Pose = "idle"
 ) {
   const cx = originX + PLAYER_FRAME_WIDTH / 2;
   const headY = originY + 5;
