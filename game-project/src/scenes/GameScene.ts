@@ -4,15 +4,19 @@ import { Inventory } from "../systems/Inventory";
 import { InventoryPanel } from "../ui/InventoryPanel";
 import { Tree } from "../entities/Tree";
 import { ensureItemTextures, ITEM_TEXTURE_KEYS, ITEM_TEXTURE_SIZE } from "../textures/itemTextures";
+import { ensurePlayerTexture, PLAYER_TEXTURE_KEY } from "../textures/playerTexture";
 
 const TREE_HIT_INTERVAL_MS = 1000;
 const TREE_HIT_DAMAGE = 1;
 const DAMAGE_TEXT_LIFETIME_MS = 800;
 
+type Facing = "down" | "up" | "left" | "right";
+
 export class GameScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+  private player!: Phaser.GameObjects.Sprite & { body: Phaser.Physics.Arcade.Body };
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private speed = 80;
+  private facing: Facing = "down";
   private inventory = new Inventory();
   private inventoryPanel!: InventoryPanel;
   private inventoryToggleKey!: Phaser.Input.Keyboard.Key;
@@ -25,17 +29,17 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.createCheckerboardBackground();
 
-    // Placeholder do personagem: um retângulo, até entrar sprite de verdade.
-    this.player = this.add.rectangle(
+    ensurePlayerTexture(this);
+    this.player = this.physics.add.sprite(
       this.cameras.main.width / 2,
       this.cameras.main.height / 2,
-      TILE_SIZE,
-      TILE_SIZE,
-      0xffa500
-    ) as Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
+      PLAYER_TEXTURE_KEY,
+      "down-idle"
+    ) as Phaser.GameObjects.Sprite & { body: Phaser.Physics.Arcade.Body };
 
-    this.physics.add.existing(this.player);
+    this.player.body.setSize(10, 12).setOffset(3, 7);
     this.player.body.setCollideWorldBounds(true);
+    this.createPlayerAnimations();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
 
@@ -55,14 +59,59 @@ export class GameScene extends Phaser.Scene {
     const body = this.player.body;
     body.setVelocity(0);
 
-    if (this.cursors.left.isDown) body.setVelocityX(-this.speed);
-    else if (this.cursors.right.isDown) body.setVelocityX(this.speed);
+    let moving = false;
 
-    if (this.cursors.up.isDown) body.setVelocityY(-this.speed);
-    else if (this.cursors.down.isDown) body.setVelocityY(this.speed);
+    if (this.cursors.left.isDown) {
+      body.setVelocityX(-this.speed);
+      this.facing = "left";
+      moving = true;
+    } else if (this.cursors.right.isDown) {
+      body.setVelocityX(this.speed);
+      this.facing = "right";
+      moving = true;
+    }
+
+    if (this.cursors.up.isDown) {
+      body.setVelocityY(-this.speed);
+      this.facing = "up";
+      moving = true;
+    } else if (this.cursors.down.isDown) {
+      body.setVelocityY(this.speed);
+      this.facing = "down";
+      moving = true;
+    }
+
+    this.updatePlayerAnimation(moving);
 
     if (Phaser.Input.Keyboard.JustDown(this.inventoryToggleKey)) {
       this.inventoryPanel.toggle();
+    }
+  }
+
+  private createPlayerAnimations() {
+    const walkFrames = (direction: "down" | "up" | "side") => [
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-a` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-idle` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-b` },
+      { key: PLAYER_TEXTURE_KEY, frame: `${direction}-idle` }
+    ];
+
+    this.anims.create({ key: "walk-down", frames: walkFrames("down"), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: "walk-up", frames: walkFrames("up"), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: "walk-side", frames: walkFrames("side"), frameRate: 6, repeat: -1 });
+  }
+
+  private updatePlayerAnimation(moving: boolean) {
+    const isSide = this.facing === "left" || this.facing === "right";
+    this.player.setFlipX(this.facing === "left");
+
+    if (moving) {
+      const animKey = isSide ? "walk-side" : `walk-${this.facing}`;
+      this.player.anims.play(animKey, true);
+    } else {
+      this.player.anims.stop();
+      const idleFrame = isSide ? "side-idle" : `${this.facing}-idle`;
+      this.player.setTexture(PLAYER_TEXTURE_KEY, idleFrame);
     }
   }
 
