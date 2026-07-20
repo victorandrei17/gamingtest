@@ -495,6 +495,53 @@ var ASSETS = (function () {
     px(ctx, PAL.trunkDark, x + 1, y + 1, size - 2, 1); // entalhe superior
   }
 
+  // Célula de inventário estilo tabuleiro de madeira: fundo marrom-avermelhado.
+  function drawInvCell(ctx, x, y, s) {
+    px(ctx, '#3a1f1f', x, y, s, s);              // contorno escuro
+    px(ctx, '#5e3131', x + 1, y + 1, s - 2, s - 2); // maroon principal
+    px(ctx, '#6b3838', x + 1, y + 1, s - 2, 1);  // realce superior
+    px(ctx, '#4a2727', x + 1, y + s - 2, s - 2, 1); // sombra inferior
+  }
+
+  // Grade de inventário com moldura de madeira (estilo da referência).
+  // Desenha a moldura + todas as células e devolve os retângulos das células
+  // para o HUD posicionar ícones/contadores. Nova coluna/linha = só mudar args.
+  function drawInventoryGrid(ctx, x, y, cols, rows, cell, gap, frame) {
+    var innerW = cols * cell + (cols + 1) * gap;
+    var innerH = rows * cell + (rows + 1) * gap;
+    var w = innerW + frame * 2, h = innerH + frame * 2;
+
+    px(ctx, '#2e1c12', x + 3, y + 4, w, h);      // sombra projetada
+    px(ctx, '#b5713f', x, y, w, h);              // corpo da moldura (caramelo)
+    strokeRectPx(ctx, x, y, w, h, '#4a2a16');    // contorno externo
+    px(ctx, '#d69a5c', x + 1, y + 1, w - 2, 1);  // realce topo
+    px(ctx, '#d69a5c', x + 1, y + 1, 1, h - 2);  // realce esquerda
+    px(ctx, '#8a5228', x + 1, y + h - 2, w - 2, 1); // sombra base
+    px(ctx, '#8a5228', x + w - 2, y + 1, 1, h - 2); // sombra direita
+
+    var ix = x + frame, iy = y + frame;
+    px(ctx, '#8a5228', ix, iy, innerW, innerH);  // madeira entre as células
+    strokeRectPx(ctx, ix, iy, innerW, innerH, '#5c3520');
+
+    var cells = [];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var cx = ix + gap + c * (cell + gap);
+        var cy = iy + gap + r * (cell + gap);
+        drawInvCell(ctx, cx, cy, cell);
+        cells.push({ x: cx, y: cy, size: cell });
+      }
+    }
+    // Studs dourados nas interseções dos divisores de madeira.
+    for (var rr = 0; rr <= rows; rr++) {
+      for (var cc = 0; cc <= cols; cc++) {
+        px(ctx, '#e0a85a', ix + cc * (cell + gap) + Math.floor(gap / 2),
+           iy + rr * (cell + gap) + Math.floor(gap / 2), 1, 1);
+      }
+    }
+    return cells;
+  }
+
   // ------------------------------------------------------------------
   // Partículas simples: cor por categoria de recurso.
   // ------------------------------------------------------------------
@@ -510,6 +557,7 @@ var ASSETS = (function () {
     drawSiteMarker: drawSiteMarker,
     drawPanel: drawPanel,
     drawSlot: drawSlot,
+    drawInventoryGrid: drawInventoryGrid,
     strokeRect: strokeRectPx,
     particleColors: PARTICLE_COLORS,
     playerSize: { w: PLAYER_W, h: PLAYER_H },

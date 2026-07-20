@@ -102,7 +102,7 @@ var HUD = (function () {
 
   // ------------------------- painel de personagem -----------------------
   function drawCharacterPanel(ctx, world) {
-    var pw = 380, ph = 210;
+    var pw = 400, ph = 232;
     var x = Math.round((CONFIG.GAME_WIDTH - pw) / 2);
     var y = Math.round((CONFIG.GAME_HEIGHT - ph) / 2);
     ASSETS.drawPanel(ctx, x, y, pw, ph);
@@ -116,7 +116,7 @@ var HUD = (function () {
 
     drawPaperDoll(ctx, world, x, y, slots);
     drawAttributes(ctx, world, x + 200, y + 30, hovered);
-    drawInventoryGrid(ctx, world, x + 12, y + 128, pw - 24);
+    drawInventoryGrid(ctx, world, x, y + 120, pw);
 
     var hint = '[I]/[TAB] FECHAR';
     ASSETS.drawText(ctx, hint, x + pw - ASSETS.textWidth(hint, 1) - 8, y + ph - 10, PAL.gray, 1);
@@ -205,21 +205,20 @@ var HUD = (function () {
     return false;
   }
 
-  // Bloco 3 — grade de inventário 5x3 (só leitura neste milestone).
-  function drawInventoryGrid(ctx, world, x, y, w) {
-    ASSETS.drawText(ctx, 'INVENTARIO', x, y, PAL.iron, 1);
-    var cols = 5, rows = 3, cell = 22, gap = 3;
-    var gx = x, gy = y + 12;
-    for (var i = 0; i < cols * rows; i++) {
-      var cxp = gx + (i % cols) * (cell + gap);
-      var cyp = gy + Math.floor(i / cols) * (cell + gap);
-      var item = INVENTORY_ORDER[i]; // primeiros slots = recursos; resto vazio
-      ASSETS.drawSlot(ctx, cxp, cyp, cell, !!item);
-      if (item) {
-        ctx.drawImage(ASSETS.items[item], cxp + (cell - 8) / 2, cyp + 3);
-        var count = String(world.inventory[item] || 0);
-        ASSETS.drawText(ctx, count, cxp + cell - ASSETS.textWidth(count, 1) - 2, cyp + cell - 7, PAL.white, 1);
-      }
+  // Bloco 3 — grade de inventário estilo tabuleiro de madeira (só leitura).
+  // Layout 8x4 como na referência; recursos preenchem os primeiros slots.
+  function drawInventoryGrid(ctx, world, panelX, topY, panelW) {
+    var cols = 8, rows = 4, cell = 16, gap = 3, frame = 5;
+    var gw = cols * cell + (cols + 1) * gap + frame * 2;
+    var gx = panelX + Math.round((panelW - gw) / 2);
+    var gy = topY + 12;
+    ASSETS.drawText(ctx, 'INVENTARIO', gx, topY, PAL.iron, 1);
+    var cells = ASSETS.drawInventoryGrid(ctx, gx, gy, cols, rows, cell, gap, frame);
+    for (var i = 0; i < INVENTORY_ORDER.length && i < cells.length; i++) {
+      var item = INVENTORY_ORDER[i], cr = cells[i];
+      ctx.drawImage(ASSETS.items[item], cr.x + (cell - 8) / 2, cr.y + 2);
+      var count = String(world.inventory[item] || 0);
+      ASSETS.drawText(ctx, count, cr.x + cell - ASSETS.textWidth(count, 1) - 1, cr.y + cell - 6, PAL.white, 1);
     }
   }
 
