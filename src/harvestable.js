@@ -22,6 +22,19 @@ Harvestable.prototype.sprite = function () {
   return ASSETS.resources[this.type];
 };
 
+// Sprite "vivo" atual: se o recurso tem estágios de dano, escolhe o frame
+// pela vida restante (maxHp -> índice 0/maior, 1 de vida -> último/menor).
+Harvestable.prototype.currentNormalImage = function () {
+  var s = this.sprite();
+  if (s.stages) {
+    var idx = this.maxHp - this.hp;
+    if (idx < 0) idx = 0;
+    if (idx > s.stages.length - 1) idx = s.stages.length - 1;
+    return s.stages[idx];
+  }
+  return s.normal;
+};
+
 // Caixa que o jogador precisa tocar para atacar (sprite inteiro na base).
 Harvestable.prototype.hurtbox = function () {
   var s = this.sprite();
@@ -98,7 +111,7 @@ function flashCanvasFor(spriteCanvas) {
 Harvestable.prototype.draw = function (ctx) {
   if (this.state === 'respawning') return;
   var s = this.sprite();
-  var img = this.state === 'destroyed' ? s.destroyed : s.normal;
+  var img = this.state === 'destroyed' ? s.destroyed : this.currentNormalImage();
   var dx = Math.round(this.x - s.anchorX);
   var dy = Math.round(this.y - s.anchorY);
 

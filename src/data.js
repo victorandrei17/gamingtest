@@ -30,7 +30,7 @@ var WEAPON_TYPES = {
 var RESOURCE_TYPES = {
   tree:        { name: 'Árvore',          category: 'tree', hp: 2, drops: 'wood' },
   iron_rock:   { name: 'Rocha de Ferro',       category: 'rock', hp: 2, drops: 'iron_ore' },
-  bronze_rock: { name: 'Rocha de Bronze',      category: 'rock', hp: 2, drops: 'bronze_ore' },
+  bronze_rock: { name: 'Rocha de Bronze',      category: 'rock', hp: 5, drops: 'bronze_ore' },
   stone_rock:  { name: 'Rocha de Pedra',       category: 'rock', hp: 2, drops: 'stone_piece' }
 };
 

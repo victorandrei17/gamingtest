@@ -5,6 +5,10 @@
 var CONFIG = {
   DEBUG: true,
 
+  // Se true, carrega os PNGs reais das rochas (assets/Rock2_grass_shadow_dark1..5)
+  // por cima dos placeholders procedurais. false = usa só os placeholders.
+  USE_REAL_ROCK_SPRITES: false,
+
   // Resolução interna e escala
   GAME_WIDTH: 480,
   GAME_HEIGHT: 270,
