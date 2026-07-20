@@ -21,10 +21,13 @@ var CONFIG = {
   PLAYER_HITBOX_H: 6,
   PLAYER_REACH: 6,           // alcance do golpe à frente do jogador (px)
 
-  // Combate
-  DAMAGE_PER_HIT: 1,
-  HIT_COOLDOWN: 0.5,         // s entre hits
+  // Combate (o dano por hit vem do atributo `damage`, ver Atributos abaixo)
+  HIT_COOLDOWN: 0.5,         // s entre hits (dividido por attackSpeed)
   ATTACK_ANIM_TIME: 0.25,    // s de duração da animação de golpe
+
+  // Atributos base do personagem (stats.js). moveSpeed usa PLAYER_SPEED.
+  BASE_DAMAGE: 1,            // dano por hit
+  BASE_ATTACK_SPEED: 1.0,    // multiplicador do cooldown de hit
 
   // Objetos atingíveis
   RESPAWN_TIME: 5,           // s para reaparecer
@@ -43,6 +46,13 @@ var CONFIG = {
   DELIVER_INTERVAL: 0.2,     // s entre cada madeira voando até a área
   UNLOCK_MSG_TIME: 2,        // s da mensagem "FERREIRO DESBLOQUEADO"
 
-  // HUD
-  HUD_PULSE_TIME: 0.25       // s do pulso do contador ao coletar
+  // Forja
+  FORGE_TIME: 3,             // s de forja (padrão; cada receita pode ter o seu)
+  SMITH_INTERACT_RADIUS: 34, // px de proximidade para exibir [E] FORJAR
+  DENY_FLASH_TIME: 0.3,      // s do feedback de negação (recurso insuficiente)
+
+  // HUD / painel de personagem
+  HUD_PULSE_TIME: 0.25,      // s do pulso do contador ao coletar
+  FLOAT_TEXT_TIME: 0.8,      // s do "+1" flutuante ao coletar
+  STAT_FLASH_TIME: 1.5       // s do destaque dourado ao ganhar um bônus
 };

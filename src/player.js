@@ -68,6 +68,17 @@ Player.prototype.moveAxis = function (dx, dy, solids) {
 };
 
 Player.prototype.update = function (dt, world) {
+  // Janela de forja aberta: movimento e ataque bloqueados (jogo segue ao fundo).
+  if (world.forge && world.forge.open) {
+    this.target = null;
+    if (this.hitCooldown > 0) this.hitCooldown -= dt;
+    if (this.attackAnimTime > 0) this.attackAnimTime -= dt;
+    this.setState('idle');
+    this.animTime += dt;
+    return;
+  }
+
+  var speed = world.stats.get('moveSpeed');
   var mv = INPUT.getMoveVector();
   var moving = mv.x !== 0 || mv.y !== 0;
 
@@ -75,8 +86,8 @@ Player.prototype.update = function (dt, world) {
     // Direção dominante define o sprite; diagonais usam a horizontal.
     if (mv.x !== 0) this.dir = mv.x > 0 ? 'right' : 'left';
     else this.dir = mv.y > 0 ? 'down' : 'up';
-    this.moveAxis(mv.x * CONFIG.PLAYER_SPEED * dt, 0, world.solids);
-    this.moveAxis(0, mv.y * CONFIG.PLAYER_SPEED * dt, world.solids);
+    this.moveAxis(mv.x * speed * dt, 0, world.solids);
+    this.moveAxis(0, mv.y * speed * dt, world.solids);
   }
 
   // Objeto à frente -> arma automática + ataque automático (só de frente)
@@ -96,8 +107,8 @@ Player.prototype.update = function (dt, world) {
 
   if (this.target && this.weapon) {
     if (this.hitCooldown <= 0) {
-      this.target.takeHit(CONFIG.DAMAGE_PER_HIT, world);
-      this.hitCooldown = CONFIG.HIT_COOLDOWN;
+      this.target.takeHit(world.stats.get('damage'), world);
+      this.hitCooldown = CONFIG.HIT_COOLDOWN / world.stats.get('attackSpeed');
       this.attackAnimTime = CONFIG.ATTACK_ANIM_TIME;
     }
   }

@@ -64,7 +64,9 @@ var ASSETS = (function () {
     '/': ['001','001','010','100','100'], ':': ['000','010','000','010','000'],
     '.': ['000','000','000','000','010'], ',': ['000','000','000','010','100'],
     '-': ['000','000','111','000','000'], '(': ['010','100','100','100','010'],
-    ')': ['010','001','001','001','010'], ' ': ['000','000','000','000','000']
+    ')': ['010','001','001','001','010'], '+': ['000','010','111','010','000'],
+    '%': ['101','001','010','100','101'], '>': ['100','010','001','010','100'],
+    ' ': ['000','000','000','000','000']
   };
 
   function drawText(ctx, text, x, y, color, scale) {
@@ -438,6 +440,62 @@ var ASSETS = (function () {
   }
 
   // ------------------------------------------------------------------
+  // Ícones de equipamento forjável — 12x12 px (forja, slots, boneco).
+  // ------------------------------------------------------------------
+  function createForgeIcons() {
+    var icons = {};
+    var s = makeCanvas(12, 12); // espada
+    px(s.ctx, PAL.grayDark, 5, 0, 3, 8);
+    px(s.ctx, PAL.iron, 6, 1, 1, 7);
+    px(s.ctx, PAL.white, 6, 1, 1, 3);
+    px(s.ctx, PAL.trunkDark, 3, 8, 7, 1);   // guarda
+    px(s.ctx, PAL.trunk, 6, 9, 1, 3);       // cabo
+    icons.sword = s.canvas;
+    var b = makeCanvas(12, 12); // bota
+    px(b.ctx, PAL.trunkDark, 3, 2, 4, 8);
+    px(b.ctx, PAL.trunk, 4, 3, 3, 6);
+    px(b.ctx, PAL.trunkDark, 3, 8, 8, 3);   // pé
+    px(b.ctx, PAL.trunk, 4, 9, 7, 1);
+    px(b.ctx, PAL.skin, 4, 3, 2, 1);        // brilho
+    icons.boot = b.canvas;
+    return icons;
+  }
+
+  // ------------------------------------------------------------------
+  // Primitivas de UI em pixel art (painel e slot). Reusadas por hud.js
+  // e forge.js para manter a estética consistente e sem antialias.
+  // ------------------------------------------------------------------
+  function drawPanel(ctx, x, y, w, h) {
+    ctx.fillStyle = PAL.black;                       // sombra externa
+    ctx.fillRect(x + 2, y + 2, w, h);
+    ctx.fillStyle = '#241f2e';                       // fundo escuro
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = PAL.trunkDark;                   // moldura externa (madeira)
+    ctx.fillRect(x, y, w, 3); ctx.fillRect(x, y + h - 3, w, 3);
+    ctx.fillRect(x, y, 3, h); ctx.fillRect(x + w - 3, y, 3, h);
+    ctx.fillStyle = PAL.trunk;                        // realce interno da moldura
+    ctx.fillRect(x + 1, y + 1, w - 2, 1); ctx.fillRect(x + 1, y + 1, 1, h - 2);
+    ctx.fillStyle = PAL.grayDark;                     // filete de metal interno
+    strokeRectPx(ctx, x + 4, y + 4, w - 8, h - 8, PAL.grayDark);
+    // cantos ornamentados
+    var c = PAL.bronze;
+    px(ctx, c, x + 4, y + 4, 2, 2); px(ctx, c, x + w - 6, y + 4, 2, 2);
+    px(ctx, c, x + 4, y + h - 6, 2, 2); px(ctx, c, x + w - 6, y + h - 6, 2, 2);
+  }
+
+  function strokeRectPx(ctx, x, y, w, h, color) {
+    px(ctx, color, x, y, w, 1); px(ctx, color, x, y + h - 1, w, 1);
+    px(ctx, color, x, y, 1, h); px(ctx, color, x + w - 1, y, 1, h);
+  }
+
+  function drawSlot(ctx, x, y, size, filled) {
+    px(ctx, PAL.black, x, y, size, size);
+    px(ctx, filled ? '#3a3450' : '#2a2536', x + 1, y + 1, size - 2, size - 2);
+    strokeRectPx(ctx, x, y, size, size, PAL.grayDark);
+    px(ctx, PAL.trunkDark, x + 1, y + 1, size - 2, 1); // entalhe superior
+  }
+
+  // ------------------------------------------------------------------
   // Partículas simples: cor por categoria de recurso.
   // ------------------------------------------------------------------
   var PARTICLE_COLORS = {
@@ -450,16 +508,20 @@ var ASSETS = (function () {
     drawText: drawText,
     textWidth: textWidth,
     drawSiteMarker: drawSiteMarker,
+    drawPanel: drawPanel,
+    drawSlot: drawSlot,
+    strokeRect: strokeRectPx,
     particleColors: PARTICLE_COLORS,
     playerSize: { w: PLAYER_W, h: PLAYER_H },
     ground: null, players: null, resources: null,
-    items: null, weaponIcons: null, buildings: null,
+    items: null, weaponIcons: null, forgeIcons: null, buildings: null,
     init: function () {
       api.ground = createGround();
       api.players = { boy: createPlayerSet(PAL.blue), girl: createPlayerSet(PAL.pink) };
       api.resources = createResources();
       api.items = createItems();
       api.weaponIcons = createWeaponIcons();
+      api.forgeIcons = createForgeIcons();
       api.buildings = { blacksmith: createBlacksmith() };
       if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealStageSprites();
     }

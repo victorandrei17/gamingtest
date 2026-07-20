@@ -38,8 +38,9 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `PLAYER_SPEED` | 90 | Velocidade do jogador (px/s) |
 | `PLAYER_HITBOX_W` / `_H` | 10 / 6 | Hitbox de colisão pelos pés |
 | `PLAYER_REACH` | 6 | Alcance do golpe à frente do jogador (px) — o ataque só ocorre de frente para o objeto |
-| `DAMAGE_PER_HIT` | 1 | Dano por golpe |
-| `HIT_COOLDOWN` | 0.5 | Segundos entre golpes |
+| `BASE_DAMAGE` | 1 | Atributo base `damage` (dano por hit) |
+| `BASE_ATTACK_SPEED` | 1.0 | Atributo base `attackSpeed` (multiplicador do cooldown) |
+| `HIT_COOLDOWN` | 0.5 | Segundos entre golpes (dividido por `attackSpeed`) |
 | `ATTACK_ANIM_TIME` | 0.25 | Duração da animação de golpe |
 | `RESPAWN_TIME` | 5 | Segundos para o objeto reaparecer |
 | `DESTROYED_SPRITE_TIME` | 0.3 | Tempo exibindo o sprite destruído |
@@ -51,8 +52,13 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `BUILD_TIME` | 3 | Segundos de construção |
 | `BLACKSMITH_COST` | 3 | Madeiras para o Ferreiro |
 | `DELIVER_INTERVAL` | 0.2 | Intervalo entre cada madeira voando até a área |
-| `UNLOCK_MSG_TIME` | 2 | Duração da mensagem de desbloqueio |
+| `UNLOCK_MSG_TIME` | 2 | Duração das mensagens de destaque (desbloqueio/forja) |
+| `FORGE_TIME` | 3 | Segundos de forja (padrão; cada receita pode sobrescrever) |
+| `SMITH_INTERACT_RADIUS` | 34 | Proximidade (px) para exibir `[E] FORJAR` |
+| `DENY_FLASH_TIME` | 0.3 | Feedback de negação ao tentar forjar sem recursos |
 | `HUD_PULSE_TIME` | 0.25 | Duração do pulso do contador do HUD ao coletar |
+| `FLOAT_TEXT_TIME` | 0.8 | Duração do `+1` flutuante ao coletar |
+| `STAT_FLASH_TIME` | 1.5 | Duração do destaque dourado ao ganhar um bônus |
 
 ## Arquitetura
 
@@ -63,14 +69,18 @@ funcionar via `file://`):
 src/config.js       constantes de balanceamento + DEBUG
 src/data.js         tabelas ITEM_TYPES, RESOURCE_TYPES, WEAPON_TYPES, BUILDINGS
 src/level.js        posições declarativas dos objetos e construções
+src/stats.js        atributos base + modificadores + valor final (stats.get)
+src/recipes.js      receitas forjáveis declarativas (RECIPES)
+src/equipment.js    itens equipados → injeta modificadores em stats
 src/assets.js       TODA a arte (procedural) — única camada a trocar por sprites reais
-src/input.js        teclado (vetor normalizado nas diagonais)
+src/input.js        teclado (vetor normalizado nas diagonais) + mouse
 src/effects.js      partículas de hit e pop de coleta
-src/player.js       máquina de estados idle/walk/attack, colisão eixo a eixo
+src/player.js       máquina de estados idle/walk/attack, colisão; lê dano/velocidade de stats
 src/harvestable.js  ciclo alive → destroyed → respawning → spawning
 src/drops.js        arco de ejeção, magnetismo, coleta
 src/building.js     área de obra: entrega item a item → obra → construído
-src/hud.js          inventário, arma ativa, mensagens, overlays de DEBUG
+src/forge.js        proximidade com o ferreiro + janela de forja (seleção, timer, consumo)
+src/hud.js          faixa de recursos + painel de personagem + mensagens + DEBUG
 src/main.js         bootstrap, cena de seleção, mundo, game loop com dt
 ```
 
@@ -86,6 +96,37 @@ Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no co
   `assets.js`; a seleção automática usa o índice derivado `WEAPON_FOR_CATEGORY`.
 - **Nova construção**: entrada em `BUILDINGS` (custo, tempo, mensagem, tamanho) +
   instância em `LEVEL.buildings` + sprite em `ASSETS.buildings`.
+- **Nova receita de forja**: uma entrada em `RECIPES` (`recipes.js`) + ícone em
+  `ASSETS.forgeIcons` — a janela de forja, o custo e o equipamento se adaptam sozinhos.
+
+### Atributos e forja (Milestone 2)
+
+Os atributos do personagem (`damage`, `moveSpeed`, `attackSpeed`) têm base em
+`config.js` e são calculados por `stats.js` como **base + modificadores** dos itens
+equipados: `final = (base + Σflat) × (1 + Σpercent)`. Nada lê dano/velocidade
+hardcoded — tudo vem de `stats.get(...)`.
+
+Formato de uma **receita** (`recipes.js`):
+
+```js
+{
+  id: 'sword',                 // referência única / slot de equipamento via `slot`
+  name: 'Espada',
+  slot: 'sword',
+  icon: 'sword',               // chave em ASSETS.forgeIcons
+  cost: { wood: 2, iron_ore: 2 },
+  time: CONFIG.FORGE_TIME,     // segundos de forja
+  modifiers: [{ stat: 'damage', type: 'flat', value: 1 }]
+}
+```
+
+Um **modificador** é declarativo: `{ stat, type: 'flat'|'percent', value }`.
+Ao forjar, o custo é debitado na hora, a barra de progresso roda `time` segundos
+(mesmo com a janela fechada) e, ao concluir, `equipment.equip(id)` recalcula os
+atributos — o bônus vale imediatamente.
+
+**Controles novos:** `[E]` forja (perto do ferreiro), `[I]`/`[TAB]` painel de
+personagem, `ESC` fecha a forja, mouse+teclado na janela de forja.
 
 ## Sprites a substituir (`src/assets.js`)
 
@@ -126,13 +167,22 @@ Os nomes dos arquivos ficam em `REAL_STAGE_FILES` (`assets.js`) — ajuste ali s
 seus arquivos tiverem outros nomes. São carregados por cima dos placeholders
 (`loadRealStageSprites()`); se algum faltar, o placeholder daquele estágio permanece.
 
-## Pronto para o Milestone 2
+## Pronto para o Milestone 3
 
-- **Tabelas de dados**: recursos, armas e construções são data-driven; novos tipos
-  não exigem `if/else` novos.
-- **Custo multi-item**: `BUILDINGS[].cost` é um mapa `{ item: qtd }` — uma construção
-  que custe madeira **e** pedra já funciona na lógica de entrega.
-- **Máquinas de estado explícitas** no jogador e nos objetos — fácil adicionar
-  estados (nadar, carregar, ferramenta melhorada...).
-- **Camada de assets isolada** — sprites reais entram sem tocar na lógica.
+- **Atributos data-driven**: novos atributos entram em `CONFIG` + `STAT_LABELS`;
+  `stats.get()` já compõe `flat`/`percent` de qualquer fonte de modificadores.
+- **Modificadores genéricos**: qualquer sistema (poções, buffs temporários, níveis)
+  pode empurrar `{ stat, type, value }` para `stats.setModifiers` sem tocar no resto.
+- **Receitas e equipamento declarativos**: novas forjas/slots = novas entradas em
+  `RECIPES`; a UI de forja e o painel se adaptam sozinhos.
+- **Forja em background com uma fila de 1** — base pronta para múltiplas forjas/fila.
+- **HUD centralizado** (`hud.js`) com painel modular (boneco, atributos, grade) e
+  primitivas de UI reutilizáveis (`ASSETS.drawPanel` / `drawSlot`).
+- **Tabelas de dados** de recursos, armas, construções e estágios de dano continuam
+  data-driven; novos tipos não exigem `if/else`.
 - **`window.GAME`** (modo DEBUG) para inspecionar/manipular o mundo em testes.
+
+> Observação de balanceamento: os objetos foram elevados a 5 HP (estágios de dano) a
+> pedido, então a Espada (`damage +1`) faz 2 de dano por hit em vez de derrubar uma
+> árvore de 2 HP em um golpe. É só ajustar o `hp` em `data.js` se quiser o
+> comportamento de "1 hit".

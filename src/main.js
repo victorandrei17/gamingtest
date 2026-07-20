@@ -10,6 +10,7 @@
   var ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
+  INPUT.attachMouse(canvas);
   ASSETS.init();
 
   var scene = 'select'; // 'select' | 'game'
@@ -33,6 +34,10 @@
       message: null,
       messageTime: 0
     };
+    // Atributos + equipamento do personagem (Milestone 2).
+    w.stats = new Stats();
+    w.equipment = new Equipment(w.stats);
+
     var i;
     for (i = 0; i < INVENTORY_ORDER.length; i++) w.inventory[INVENTORY_ORDER[i]] = 0;
     for (i = 0; i < LEVEL.objects.length; i++) {
@@ -43,6 +48,7 @@
       var b = LEVEL.buildings[i];
       w.buildings.push(new Building(b.type, b.x, b.y));
     }
+    w.forge = new Forge(w); // interação com o ferreiro + janela de forja
 
     w.addToInventory = function (itemId, n) {
       w.inventory[itemId] = (w.inventory[itemId] || 0) + n;
@@ -76,7 +82,8 @@
 
   function updateWorld(dt) {
     world.rebuildSolids();
-    world.player.update(dt, world);
+    world.forge.handleInput();      // abrir/fechar forja + navegação (proximidade)
+    world.player.update(dt, world); // movimento bloqueado se a forja estiver aberta
 
     var i;
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].update(dt);
@@ -97,7 +104,8 @@
       world.messageTime -= dt;
       if (world.messageTime <= 0) world.message = null;
     }
-    HUD.update(dt);
+    world.forge.update(dt); // timer da forja: roda mesmo com a janela fechada
+    HUD.update(dt, world);
   }
 
   function drawWorld() {
@@ -126,8 +134,10 @@
     for (i = 0; i < world.particles.length; i++) world.particles[i].draw(ctx);
     for (i = 0; i < world.pops.length; i++) world.pops[i].draw(ctx);
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].drawHealthbar(ctx);
+    world.forge.drawPrompt(ctx);   // [E] FORJAR sobre a casa (espaço do mundo)
 
     HUD.draw(ctx, world);
+    world.forge.drawWindow(ctx);   // janela de forja por cima do HUD
     if (CONFIG.DEBUG) HUD.drawDebug(ctx, world);
   }
 

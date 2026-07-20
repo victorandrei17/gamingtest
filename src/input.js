@@ -1,20 +1,40 @@
-// input.js — estado do teclado (WASD + setas).
+// input.js — estado do teclado (WASD + setas + teclas de UI) e do mouse.
 'use strict';
 
 var INPUT = (function () {
   var keys = {};
   var pressedThisFrame = {};
+  var mouse = { x: 0, y: 0, down: false };
+  var clickedThisFrame = false;
+
+  // Teclas cujo comportamento padrão do navegador queremos suprimir.
+  var PREVENT = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'];
 
   window.addEventListener('keydown', function (e) {
     if (!keys[e.code]) pressedThisFrame[e.code] = true;
     keys[e.code] = true;
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].indexOf(e.code) >= 0) {
-      e.preventDefault();
-    }
+    if (PREVENT.indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
 
+  // Mouse em coordenadas internas (480x270), convertidas da escala de exibição.
+  function attachMouse(canvas) {
+    canvas.addEventListener('mousemove', function (e) {
+      var rect = canvas.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left) / rect.width * CONFIG.GAME_WIDTH;
+      mouse.y = (e.clientY - rect.top) / rect.height * CONFIG.GAME_HEIGHT;
+    });
+    canvas.addEventListener('mousedown', function (e) {
+      if (e.button === 0) { mouse.down = true; clickedThisFrame = true; }
+    });
+    window.addEventListener('mouseup', function (e) {
+      if (e.button === 0) mouse.down = false;
+    });
+  }
+
   return {
+    attachMouse: attachMouse,
+    mouse: mouse,
     // Vetor de movimento normalizado (diagonais não são mais rápidas).
     getMoveVector: function () {
       var x = 0, y = 0;
@@ -30,6 +50,8 @@ var INPUT = (function () {
     },
     // true apenas no frame em que a tecla foi pressionada.
     wasPressed: function (code) { return !!pressedThisFrame[code]; },
-    endFrame: function () { pressedThisFrame = {}; }
+    // true apenas no frame em que houve clique do botão esquerdo.
+    wasClicked: function () { return clickedThisFrame; },
+    endFrame: function () { pressedThisFrame = {}; clickedThisFrame = false; }
   };
 })();
