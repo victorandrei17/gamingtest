@@ -31,7 +31,7 @@ var RESOURCE_TYPES = {
   tree:        { name: 'Árvore',          category: 'tree', hp: 5, drops: 'wood' },
   iron_rock:   { name: 'Rocha de Ferro',       category: 'rock', hp: 5, drops: 'iron_ore' },
   bronze_rock: { name: 'Rocha de Bronze',      category: 'rock', hp: 5, drops: 'bronze_ore' },
-  stone_rock:  { name: 'Rocha de Pedra',       category: 'rock', hp: 2, drops: 'stone_piece' }
+  stone_rock:  { name: 'Rocha de Pedra',       category: 'rock', hp: 5, drops: 'stone_piece' }
 };
 
 // Índice categoria -> arma (derivado de WEAPON_TYPES; não editar à mão).

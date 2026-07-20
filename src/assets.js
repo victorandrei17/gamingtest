@@ -272,8 +272,9 @@ var ASSETS = (function () {
 
   // Paleta de cada rocha com estágios. Nova rocha? adicione uma entrada aqui.
   var ROCK_STAGE_COLORS = {
-    bronze_rock: { fill: PAL.bronze, dark: PAL.trunk,    outline: PAL.trunkDark, hi: PAL.skin },
-    iron_rock:   { fill: PAL.gray,   dark: PAL.grayDark, outline: PAL.black,     hi: PAL.iron }
+    bronze_rock: { fill: PAL.bronze,   dark: PAL.trunk,    outline: PAL.trunkDark, hi: PAL.skin },
+    iron_rock:   { fill: PAL.gray,     dark: PAL.grayDark, outline: PAL.black,     hi: PAL.iron },
+    stone_rock:  { fill: PAL.grayDark, dark: PAL.black,    outline: PAL.black,     hi: PAL.gray }
   };
 
   function createRockStages(col) {
@@ -318,6 +319,13 @@ var ASSETS = (function () {
       'assets/Rock1_grass_shadow_dark3.png', // 3 HP
       'assets/Rock1_grass_shadow_dark4.png', // 2 HP
       'assets/Rock1_grass_shadow_dark5.png'  // 1 HP (menor)
+    ],
+    stone_rock: [
+      'assets/Rock3_grass_shadow_dark1.png', // 5 HP (maior)
+      'assets/Rock3_grass_shadow_dark2.png', // 4 HP
+      'assets/Rock3_grass_shadow_dark3.png', // 3 HP
+      'assets/Rock3_grass_shadow_dark4.png', // 2 HP
+      'assets/Rock3_grass_shadow_dark5.png'  // 1 HP (menor)
     ]
   };
 
@@ -346,7 +354,7 @@ var ASSETS = (function () {
       tree:        createTreeStages(),
       iron_rock:   createRockStages(ROCK_STAGE_COLORS.iron_rock),
       bronze_rock: createRockStages(ROCK_STAGE_COLORS.bronze_rock),
-      stone_rock:  createRock(PAL.grayDark, PAL.gray)
+      stone_rock:  createRockStages(ROCK_STAGE_COLORS.stone_rock)
     };
   }
 

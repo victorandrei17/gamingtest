@@ -37,6 +37,16 @@ Cada objeto usa 5 PNGs, do maior (5 HP) ao menor (1 HP).
 | `Rock1_grass_shadow_dark4.png` | 2 HP |
 | `Rock1_grass_shadow_dark5.png` | 1 HP (menor) |
 
+**Rocha de pedra:**
+
+| Arquivo | Vida |
+|---|---|
+| `Rock3_grass_shadow_dark1.png` | 5 HP (maior) |
+| `Rock3_grass_shadow_dark2.png` | 4 HP |
+| `Rock3_grass_shadow_dark3.png` | 3 HP |
+| `Rock3_grass_shadow_dark4.png` | 2 HP |
+| `Rock3_grass_shadow_dark5.png` | 1 HP (menor) |
+
 Depois de colocar os arquivos, ligue a flag em `src/config.js`:
 
 ```js
