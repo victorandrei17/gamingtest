@@ -1,0 +1,43 @@
+// config.js — todos os números de balanceamento do jogo.
+// Nenhum valor mágico deve existir fora deste arquivo.
+'use strict';
+
+var CONFIG = {
+  DEBUG: true,
+
+  // Resolução interna e escala
+  GAME_WIDTH: 480,
+  GAME_HEIGHT: 270,
+  SCALE: 4,          // 480x270 * 4 = 1920x1080
+  TILE_SIZE: 16,
+
+  // Jogador
+  PLAYER_SPEED: 90,          // px/s
+  PLAYER_HITBOX_W: 10,       // hitbox pelos "pés"
+  PLAYER_HITBOX_H: 6,
+
+  // Combate
+  DAMAGE_PER_HIT: 1,
+  HIT_COOLDOWN: 0.5,         // s entre hits
+  ATTACK_ANIM_TIME: 0.25,    // s de duração da animação de golpe
+
+  // Objetos atingíveis
+  RESPAWN_TIME: 5,           // s para reaparecer
+  DESTROYED_SPRITE_TIME: 0.3,// s exibindo sprite destruído
+  SPAWN_ANIM_TIME: 0.4,      // s da animação de surgimento
+  HEALTHBAR_HIDE_TIME: 3,    // s sem dano para esconder a barra de vida
+
+  // Drops / coleta
+  COLLECT_RADIUS: 20,        // px — raio de atração do item
+  DROP_ARC_TIME: 0.35,       // s do arco de ejeção
+  MAGNET_TIME: 0.25,         // s do tween de magnetismo até o jogador
+
+  // Construção (valores padrão; custo por prédio fica em data.js/BUILDINGS)
+  BUILD_TIME: 3,             // s de construção
+  BLACKSMITH_COST: 3,        // madeiras
+  DELIVER_INTERVAL: 0.2,     // s entre cada madeira voando até a área
+  UNLOCK_MSG_TIME: 2,        // s da mensagem "FERREIRO DESBLOQUEADO"
+
+  // HUD
+  HUD_PULSE_TIME: 0.25       // s do pulso do contador ao coletar
+};

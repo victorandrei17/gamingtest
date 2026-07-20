@@ -1,0 +1,344 @@
+// assets.js — TODA a arte do jogo vive aqui, gerada proceduralmente.
+// Para usar sprites reais, substitua as funções create* deste arquivo por
+// carregamento de imagens mantendo a mesma interface pública (ASSETS.*).
+// Dimensões esperadas de cada sprite estão documentadas no README.
+'use strict';
+
+var ASSETS = (function () {
+
+  // Paleta de 16 cores — pixel art saturada, estilo cartoon.
+  var PAL = {
+    black:      '#1a1c2c',
+    darkGreen:  '#2e5339',
+    green:      '#3a5a40',   // chão tom A
+    green2:     '#436a48',   // chão tom B
+    leaf:       '#4f9d4f',
+    leafLight:  '#7ec850',
+    trunk:      '#7a4a2b',
+    trunkDark:  '#5c3520',
+    gray:       '#8b9bb4',
+    grayDark:   '#566c86',
+    iron:       '#c0cbdc',
+    bronze:     '#e8a04c',
+    skin:       '#f0c49a',
+    blue:       '#3b7dd8',
+    pink:       '#e86ac0',
+    white:      '#f4f4f4'
+  };
+
+  function makeCanvas(w, h) {
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    return { canvas: c, ctx: ctx };
+  }
+
+  function px(ctx, color, x, y, w, h) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w === undefined ? 1 : w, h === undefined ? 1 : h);
+  }
+
+  // ------------------------------------------------------------------
+  // Fonte bitmap 3x5 (sem antialias). drawText desenha na escala pedida.
+  // ------------------------------------------------------------------
+  var FONT = {
+    'A': ['010','101','111','101','101'], 'B': ['110','101','110','101','110'],
+    'C': ['011','100','100','100','011'], 'D': ['110','101','101','101','110'],
+    'E': ['111','100','110','100','111'], 'F': ['111','100','110','100','100'],
+    'G': ['011','100','101','101','011'], 'H': ['101','101','111','101','101'],
+    'I': ['111','010','010','010','111'], 'J': ['001','001','001','101','010'],
+    'K': ['101','110','100','110','101'], 'L': ['100','100','100','100','111'],
+    'M': ['101','111','111','101','101'], 'N': ['101','111','111','111','101'],
+    'O': ['010','101','101','101','010'], 'P': ['110','101','110','100','100'],
+    'Q': ['010','101','101','110','011'], 'R': ['110','101','110','110','101'],
+    'S': ['011','100','010','001','110'], 'T': ['111','010','010','010','010'],
+    'U': ['101','101','101','101','111'], 'V': ['101','101','101','101','010'],
+    'W': ['101','101','111','111','101'], 'X': ['101','101','010','101','101'],
+    'Y': ['101','101','010','010','010'], 'Z': ['111','001','010','100','111'],
+    '0': ['010','101','101','101','010'], '1': ['010','110','010','010','111'],
+    '2': ['110','001','010','100','111'], '3': ['110','001','010','001','110'],
+    '4': ['101','101','111','001','001'], '5': ['111','100','110','001','110'],
+    '6': ['011','100','110','101','010'], '7': ['111','001','010','010','010'],
+    '8': ['010','101','010','101','010'], '9': ['010','101','011','001','110'],
+    '/': ['001','001','010','100','100'], ':': ['000','010','000','010','000'],
+    '.': ['000','000','000','000','010'], ',': ['000','000','000','010','100'],
+    '-': ['000','000','111','000','000'], '(': ['010','100','100','100','010'],
+    ')': ['010','001','001','001','010'], ' ': ['000','000','000','000','000']
+  };
+
+  function drawText(ctx, text, x, y, color, scale) {
+    scale = scale || 1;
+    text = String(text).toUpperCase();
+    ctx.fillStyle = color;
+    var cx = x;
+    for (var i = 0; i < text.length; i++) {
+      var g = FONT[text[i]] || FONT[' '];
+      for (var r = 0; r < 5; r++) {
+        for (var c = 0; c < 3; c++) {
+          if (g[r][c] === '1') {
+            ctx.fillRect(cx + c * scale, y + r * scale, scale, scale);
+          }
+        }
+      }
+      cx += 4 * scale;
+    }
+    return cx - x; // largura desenhada
+  }
+
+  function textWidth(text, scale) {
+    return String(text).length * 4 * (scale || 1) - (scale || 1);
+  }
+
+  // ------------------------------------------------------------------
+  // Chão — xadrez de desenvolvimento. Trocar por tileset real aqui.
+  // ------------------------------------------------------------------
+  function createGround() {
+    var t = CONFIG.TILE_SIZE;
+    var g = makeCanvas(CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
+    for (var ty = 0; ty < CONFIG.GAME_HEIGHT / t; ty++) {
+      for (var tx = 0; tx < CONFIG.GAME_WIDTH / t; tx++) {
+        px(g.ctx, (tx + ty) % 2 === 0 ? PAL.green : PAL.green2, tx * t, ty * t, t, t);
+      }
+    }
+    return g.canvas;
+  }
+
+  // ------------------------------------------------------------------
+  // Jogador — 16x22 px, âncora nos pés (8, 21).
+  // Frames: idle 1, walk 4, attack 3 (por arma).
+  // Direções: down, up, right (left = espelho de right).
+  // ------------------------------------------------------------------
+  var PLAYER_W = 16, PLAYER_H = 22;
+
+  function drawWeaponInHand(ctx, weaponId, frame, dir) {
+    // Braço estendido com a arma; 3 frames: erguer, golpe, retorno.
+    var head = weaponId === 'axe' ? PAL.gray : PAL.iron;
+    var angles = [-0.9, 0.5, 0.1]; // pose do golpe por frame
+    var a = angles[frame] || 0;
+    ctx.save();
+    if (dir === 'up') ctx.translate(4, 10); else ctx.translate(12, 10);
+    ctx.rotate(dir === 'up' ? -a : a);
+    px(ctx, PAL.trunk, -1, -8, 2, 9);            // cabo
+    if (weaponId === 'axe') {
+      px(ctx, head, -3, -9, 5, 3);               // lâmina do machado
+    } else {
+      px(ctx, head, -4, -9, 7, 2);               // cabeça da picareta
+      px(ctx, head, -4, -8, 2, 2);
+      px(ctx, head, 1, -8, 2, 2);
+    }
+    ctx.restore();
+  }
+
+  function drawPlayerFrame(shirtColor, dir, pose, frame, weaponId) {
+    var m = makeCanvas(PLAYER_W, PLAYER_H);
+    var ctx = m.ctx;
+    var mirror = dir === 'left';
+    var d = mirror ? 'right' : dir;
+    if (mirror) { ctx.translate(PLAYER_W, 0); ctx.scale(-1, 1); }
+
+    var bob = 0, legA = 0, legB = 0;
+    if (pose === 'walk') {
+      var seq = [2, 0, -2, 0];
+      legA = seq[frame % 4]; legB = -legA;
+      bob = frame % 2 === 0 ? 1 : 0;
+    }
+
+    // Pernas
+    px(ctx, PAL.black, 5, 17 + Math.max(0, legA / 2), 2, 4 - Math.max(0, legA / 2));
+    px(ctx, PAL.black, 9, 17 + Math.max(0, legB / 2), 2, 4 - Math.max(0, legB / 2));
+    // Corpo
+    px(ctx, shirtColor, 4, 10 + bob, 8, 8);
+    // Braços (quando não atacando; o ataque desenha o braço com a arma)
+    if (pose !== 'attack') {
+      px(ctx, shirtColor, 3, 11 + bob, 1, 5);
+      px(ctx, shirtColor, 12, 11 + bob, 1, 5);
+    }
+    // Cabeça
+    px(ctx, PAL.skin, 4, 2 + bob, 8, 8);
+    // Cabelo
+    px(ctx, shirtColor === PAL.pink ? PAL.trunk : PAL.trunkDark, 4, 2 + bob, 8, 3);
+    if (shirtColor === PAL.pink) { // cabelo comprido da menina
+      px(ctx, PAL.trunk, 3, 3 + bob, 1, 6);
+      px(ctx, PAL.trunk, 12, 3 + bob, 1, 6);
+    }
+    // Rosto por direção
+    if (d === 'down') {
+      px(ctx, PAL.black, 6, 6 + bob); px(ctx, PAL.black, 9, 6 + bob);
+    } else if (d === 'right') {
+      px(ctx, PAL.black, 9, 6 + bob); px(ctx, PAL.black, 11, 6 + bob);
+    } // up: sem rosto (nuca)
+
+    if (pose === 'attack') drawWeaponInHand(ctx, weaponId, frame, d);
+    return m.canvas;
+  }
+
+  function createPlayerSet(shirtColor) {
+    var dirs = ['down', 'up', 'left', 'right'];
+    var set = {};
+    for (var i = 0; i < dirs.length; i++) {
+      var dir = dirs[i];
+      var frames = { idle: [], walk: [], attack: {} };
+      frames.idle.push(drawPlayerFrame(shirtColor, dir, 'idle', 0, null));
+      for (var f = 0; f < 4; f++) frames.walk.push(drawPlayerFrame(shirtColor, dir, 'walk', f, null));
+      for (var wId in WEAPON_TYPES) {
+        frames.attack[wId] = [];
+        for (var af = 0; af < 3; af++) {
+          frames.attack[wId].push(drawPlayerFrame(shirtColor, dir, 'attack', af, wId));
+        }
+      }
+      set[dir] = frames;
+    }
+    return set;
+  }
+
+  // ------------------------------------------------------------------
+  // Objetos atingíveis. Cada entrada: { normal, destroyed, w, h,
+  // anchorX, anchorY } — âncora na base (pés) do sprite.
+  // ------------------------------------------------------------------
+  function createTree() {
+    var m = makeCanvas(24, 32);
+    px(m.ctx, PAL.trunkDark, 10, 22, 4, 10);
+    px(m.ctx, PAL.trunk, 10, 22, 2, 10);
+    px(m.ctx, PAL.leaf, 4, 4, 16, 18);
+    px(m.ctx, PAL.leaf, 2, 8, 20, 10);
+    px(m.ctx, PAL.leafLight, 6, 6, 6, 6);
+    px(m.ctx, PAL.darkGreen, 16, 14, 5, 6);
+    var d = makeCanvas(24, 32); // árvore caída
+    px(d.ctx, PAL.trunkDark, 2, 26, 20, 5);
+    px(d.ctx, PAL.trunk, 2, 26, 20, 2);
+    px(d.ctx, PAL.leaf, 0, 24, 6, 8);
+    return { normal: m.canvas, destroyed: d.canvas, w: 24, h: 32, anchorX: 12, anchorY: 31 };
+  }
+
+  function createRock(baseColor, fleckColor) {
+    var m = makeCanvas(20, 16);
+    px(m.ctx, PAL.grayDark, 2, 4, 16, 11);
+    px(m.ctx, baseColor, 3, 3, 14, 10);
+    px(m.ctx, PAL.white, 5, 4, 4, 2);
+    px(m.ctx, fleckColor, 7, 8, 3, 3);
+    px(m.ctx, fleckColor, 12, 5, 2, 2);
+    px(m.ctx, fleckColor, 11, 10, 2, 2);
+    var d = makeCanvas(20, 16); // quebrada
+    px(d.ctx, PAL.grayDark, 3, 11, 5, 4);
+    px(d.ctx, baseColor, 9, 12, 4, 3);
+    px(d.ctx, PAL.grayDark, 14, 11, 4, 4);
+    return { normal: m.canvas, destroyed: d.canvas, w: 20, h: 16, anchorX: 10, anchorY: 15 };
+  }
+
+  function createResources() {
+    return {
+      tree:        createTree(),
+      iron_rock:   createRock(PAL.gray, PAL.iron),
+      bronze_rock: createRock(PAL.gray, PAL.bronze),
+      stone_rock:  createRock(PAL.grayDark, PAL.gray)
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // Itens coletáveis — 8x8 px (também usados como ícones do HUD).
+  // ------------------------------------------------------------------
+  function createItem(drawFn) {
+    var m = makeCanvas(8, 8);
+    drawFn(m.ctx);
+    return m.canvas;
+  }
+
+  function createItems() {
+    return {
+      wood: createItem(function (ctx) {
+        px(ctx, PAL.trunkDark, 0, 2, 8, 4);
+        px(ctx, PAL.trunk, 0, 2, 8, 2);
+        px(ctx, PAL.skin, 6, 3, 2, 2);
+      }),
+      iron_ore: createItem(function (ctx) {
+        px(ctx, PAL.grayDark, 1, 2, 6, 5);
+        px(ctx, PAL.iron, 2, 3, 3, 2);
+        px(ctx, PAL.white, 2, 3, 1, 1);
+      }),
+      bronze_ore: createItem(function (ctx) {
+        px(ctx, PAL.grayDark, 1, 2, 6, 5);
+        px(ctx, PAL.bronze, 2, 3, 3, 2);
+        px(ctx, PAL.white, 2, 3, 1, 1);
+      }),
+      stone_piece: createItem(function (ctx) {
+        px(ctx, PAL.grayDark, 1, 2, 6, 5);
+        px(ctx, PAL.gray, 2, 3, 4, 3);
+      })
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // Ícones de arma — 10x10 px (indicador do HUD).
+  // ------------------------------------------------------------------
+  function createWeaponIcons() {
+    var icons = {};
+    var axe = makeCanvas(10, 10);
+    px(axe.ctx, PAL.trunk, 4, 2, 2, 8);
+    px(axe.ctx, PAL.gray, 2, 1, 5, 3);
+    icons.axe = axe.canvas;
+    var pick = makeCanvas(10, 10);
+    px(pick.ctx, PAL.trunk, 4, 2, 2, 8);
+    px(pick.ctx, PAL.iron, 1, 1, 8, 2);
+    px(pick.ctx, PAL.iron, 1, 3, 2, 1);
+    px(pick.ctx, PAL.iron, 7, 3, 2, 1);
+    icons.pickaxe = pick.canvas;
+    return icons;
+  }
+
+  // ------------------------------------------------------------------
+  // Construções — { built, w, h, anchorX, anchorY }.
+  // A área de obra (contorno tracejado) é desenhada por drawSiteMarker.
+  // ------------------------------------------------------------------
+  function createBlacksmith() {
+    var m = makeCanvas(48, 40);
+    px(m.ctx, PAL.grayDark, 4, 14, 40, 25);   // parede
+    px(m.ctx, PAL.gray, 6, 16, 36, 21);
+    px(m.ctx, PAL.trunkDark, 0, 4, 48, 12);   // telhado
+    px(m.ctx, PAL.trunk, 2, 6, 44, 8);
+    px(m.ctx, PAL.black, 20, 26, 8, 13);      // porta
+    px(m.ctx, PAL.blue, 9, 20, 6, 6);         // janela
+    px(m.ctx, PAL.blue, 33, 20, 6, 6);
+    px(m.ctx, PAL.black, 36, 0, 5, 8);        // chaminé
+    return { built: m.canvas, w: 48, h: 40, anchorX: 24, anchorY: 39 };
+  }
+
+  function drawSiteMarker(ctx, x, y, w, h, time) {
+    // Contorno tracejado animado da área de construção.
+    ctx.save();
+    ctx.strokeStyle = PAL.white;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.lineDashOffset = -Math.floor(time * 8) % 6;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.restore();
+  }
+
+  // ------------------------------------------------------------------
+  // Partículas simples: cor por categoria de recurso.
+  // ------------------------------------------------------------------
+  var PARTICLE_COLORS = {
+    tree: [PAL.leaf, PAL.leafLight, PAL.trunk],
+    rock: [PAL.gray, PAL.grayDark, PAL.white]
+  };
+
+  var api = {
+    palette: PAL,
+    drawText: drawText,
+    textWidth: textWidth,
+    drawSiteMarker: drawSiteMarker,
+    particleColors: PARTICLE_COLORS,
+    playerSize: { w: PLAYER_W, h: PLAYER_H },
+    ground: null, players: null, resources: null,
+    items: null, weaponIcons: null, buildings: null,
+    init: function () {
+      api.ground = createGround();
+      api.players = { boy: createPlayerSet(PAL.blue), girl: createPlayerSet(PAL.pink) };
+      api.resources = createResources();
+      api.items = createItems();
+      api.weaponIcons = createWeaponIcons();
+      api.buildings = { blacksmith: createBlacksmith() };
+    }
+  };
+  return api;
+})();
