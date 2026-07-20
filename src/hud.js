@@ -83,6 +83,11 @@ var HUD = (function () {
     ctx.strokeStyle = 'rgba(59,125,216,1)';
     ctx.strokeRect(hb.x + 0.5, hb.y + 0.5, hb.w - 1, hb.h - 1);
 
+    // Caixa de alcance do golpe (à frente do jogador)
+    var fb = world.player.frontBox();
+    ctx.strokeStyle = 'rgba(232,160,60,0.9)';
+    ctx.strokeRect(fb.x + 0.5, fb.y + 0.5, fb.w - 1, fb.h - 1);
+
     // Raio de coleta
     ctx.strokeStyle = 'rgba(126,200,80,0.6)';
     ctx.beginPath();

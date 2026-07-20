@@ -19,6 +19,7 @@ var CONFIG = {
   PLAYER_SPEED: 90,          // px/s
   PLAYER_HITBOX_W: 10,       // hitbox pelos "pés"
   PLAYER_HITBOX_H: 6,
+  PLAYER_REACH: 6,           // alcance do golpe à frente do jogador (px)
 
   // Combate
   DAMAGE_PER_HIT: 1,

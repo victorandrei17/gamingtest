@@ -37,6 +37,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `TILE_SIZE` | 16 | Grid base em px |
 | `PLAYER_SPEED` | 90 | Velocidade do jogador (px/s) |
 | `PLAYER_HITBOX_W` / `_H` | 10 / 6 | Hitbox de colisão pelos pés |
+| `PLAYER_REACH` | 6 | Alcance do golpe à frente do jogador (px) — o ataque só ocorre de frente para o objeto |
 | `DAMAGE_PER_HIT` | 1 | Dano por golpe |
 | `HIT_COOLDOWN` | 0.5 | Segundos entre golpes |
 | `ATTACK_ANIM_TIME` | 0.25 | Duração da animação de golpe |

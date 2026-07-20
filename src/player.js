@@ -24,10 +24,17 @@ Player.prototype.hitbox = function () {
   };
 };
 
-// Caixa de interação: hitbox expandida para detectar contato com objetos.
-Player.prototype.reachBox = function () {
+// Caixa de alcance do golpe: estende a hitbox SÓ na direção que o jogador
+// encara. Assim o ataque só acontece quando ele está de frente para o objeto.
+Player.prototype.frontBox = function () {
   var hb = this.hitbox();
-  return { x: hb.x - 3, y: hb.y - 3, w: hb.w + 6, h: hb.h + 6 };
+  var r = CONFIG.PLAYER_REACH;
+  var b = { x: hb.x, y: hb.y, w: hb.w, h: hb.h };
+  if (this.dir === 'left')       { b.x -= r; b.w += r; }
+  else if (this.dir === 'right') { b.w += r; }
+  else if (this.dir === 'up')    { b.y -= r; b.h += r; }
+  else                           { b.h += r; } // down
+  return b;
 };
 
 function rectsOverlap(a, b) {
@@ -72,12 +79,12 @@ Player.prototype.update = function (dt, world) {
     this.moveAxis(0, mv.y * CONFIG.PLAYER_SPEED * dt, world.solids);
   }
 
-  // Contato com objeto atingível -> arma automática + ataque automático
+  // Objeto à frente -> arma automática + ataque automático (só de frente)
   this.target = null;
-  var reach = this.reachBox();
+  var front = this.frontBox();
   for (var i = 0; i < world.harvestables.length; i++) {
     var h = world.harvestables[i];
-    if (h.alive && rectsOverlap(reach, h.hurtbox())) {
+    if (h.alive && rectsOverlap(front, h.hurtbox())) {
       this.target = h;
       this.weapon = WEAPON_FOR_CATEGORY[RESOURCE_TYPES[h.type].category] || null;
       break;
