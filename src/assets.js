@@ -228,62 +228,81 @@ var ASSETS = (function () {
     return { normal: m.canvas, destroyed: d.canvas, w: 20, h: 16, anchorX: 10, anchorY: 15 };
   }
 
-  // Rocha de bronze com estágios de dano: encolhe a cada hit.
-  // Placeholders procedurais 24x20 (todos os frames do mesmo tamanho,
-  // ancorados na base). Para arte real, ver BRONZE_ROCK_FILES abaixo.
-  function bronzeGrass(ctx) {
+  // Rochas com estágios de dano: encolhem a cada hit. Placeholders
+  // procedurais 24x20 (todos os frames do mesmo tamanho, ancorados na base).
+  // Para arte real, ver REAL_ROCK_FILES + CONFIG.USE_REAL_ROCK_SPRITES.
+  function rockGrass(ctx) {
     px(ctx, PAL.darkGreen, 4, 18, 16, 2);   // sombra no chão
     px(ctx, PAL.leaf, 5, 17, 14, 2);
     px(ctx, PAL.leafLight, 6, 16, 2, 1);
     px(ctx, PAL.leafLight, 16, 16, 2, 1);
   }
 
-  function bronzeBoulder(ctx, bw, bh) {
+  function rockBoulder(ctx, bw, bh, col) {
     var cx = 12, baseY = 18;
     var x = cx - Math.floor(bw / 2);
     var y = baseY - bh;
-    px(ctx, PAL.trunkDark, x, y + 1, bw, bh - 1);       // contorno/base escura
-    px(ctx, PAL.trunkDark, x + 1, y, bw - 2, 1);
-    px(ctx, PAL.bronze, x + 1, y + 1, bw - 2, bh - 2);  // preenchimento bronze
-    var fw = Math.max(1, Math.floor(bw * 0.35));         // faceta sombreada
+    px(ctx, col.outline, x, y + 1, bw, bh - 1);        // contorno/base escura
+    px(ctx, col.outline, x + 1, y, bw - 2, 1);
+    px(ctx, col.fill, x + 1, y + 1, bw - 2, bh - 2);   // preenchimento
+    var fw = Math.max(1, Math.floor(bw * 0.35));        // faceta sombreada
     var fh = Math.max(1, bh - Math.floor(bh * 0.45) - 1);
-    px(ctx, PAL.trunk, x + bw - 1 - fw, y + Math.floor(bh * 0.45), fw, fh);
-    px(ctx, PAL.trunkDark, cx, y + Math.floor(bh * 0.3), 1, Math.max(1, Math.floor(bh * 0.5))); // fresta
-    px(ctx, PAL.skin, x + 1, y + 1, Math.max(1, Math.floor(bw * 0.3)), Math.max(1, Math.floor(bh * 0.22))); // brilho
+    px(ctx, col.dark, x + bw - 1 - fw, y + Math.floor(bh * 0.45), fw, fh);
+    px(ctx, col.outline, cx, y + Math.floor(bh * 0.3), 1, Math.max(1, Math.floor(bh * 0.5))); // fresta
+    px(ctx, col.hi, x + 1, y + 1, Math.max(1, Math.floor(bw * 0.3)), Math.max(1, Math.floor(bh * 0.22))); // brilho
   }
 
-  function createBronzeRockStages() {
+  // Paleta de cada rocha com estágios. Nova rocha? adicione uma entrada aqui.
+  var ROCK_STAGE_COLORS = {
+    bronze_rock: { fill: PAL.bronze, dark: PAL.trunk,    outline: PAL.trunkDark, hi: PAL.skin },
+    iron_rock:   { fill: PAL.gray,   dark: PAL.grayDark, outline: PAL.black,     hi: PAL.iron }
+  };
+
+  function createRockStages(col) {
     // Índice 0 = 5 HP (maior) ... índice 4 = 1 HP (menor).
     var sizes = [[20, 16], [16, 13], [13, 10], [9, 7], [6, 5]];
     var stages = [];
     for (var i = 0; i < sizes.length; i++) {
       var m = makeCanvas(24, 20);
-      bronzeGrass(m.ctx);
-      bronzeBoulder(m.ctx, sizes[i][0], sizes[i][1]);
+      rockGrass(m.ctx);
+      rockBoulder(m.ctx, sizes[i][0], sizes[i][1], col);
       stages.push(m.canvas);
     }
     var d = makeCanvas(24, 20); // escombros
-    bronzeGrass(d.ctx);
-    px(d.ctx, PAL.trunkDark, 6, 15, 4, 3);
-    px(d.ctx, PAL.bronze, 7, 16, 2, 2);
-    px(d.ctx, PAL.trunkDark, 13, 16, 4, 2);
-    px(d.ctx, PAL.bronze, 14, 16, 2, 1);
+    rockGrass(d.ctx);
+    px(d.ctx, col.outline, 6, 15, 4, 3);
+    px(d.ctx, col.fill, 7, 16, 2, 2);
+    px(d.ctx, col.outline, 13, 16, 4, 2);
+    px(d.ctx, col.fill, 14, 16, 2, 1);
     return { stages: stages, destroyed: d.canvas, w: 24, h: 20, anchorX: 12, anchorY: 19 };
   }
 
-  // Arte real opcional (assets/). Cada arquivo é um estágio de dano,
-  // do maior (5 HP) ao menor (1 HP). Carregada só com CONFIG.USE_REAL_ROCK_SPRITES.
-  var BRONZE_ROCK_FILES = [
-    'assets/Rock2_grass_shadow_dark1.png', // 5 HP (maior)
-    'assets/Rock2_grass_shadow_dark2.png', // 4 HP
-    'assets/Rock2_grass_shadow_dark3.png', // 3 HP
-    'assets/Rock2_grass_shadow_dark4.png', // 2 HP
-    'assets/Rock2_grass_shadow_dark5.png'  // 1 HP (menor)
-  ];
+  // Arte real opcional (assets/). Um arquivo por estágio de dano, do maior
+  // (5 HP) ao menor (1 HP). Carregada só com CONFIG.USE_REAL_ROCK_SPRITES.
+  var REAL_ROCK_FILES = {
+    bronze_rock: [
+      'assets/Rock2_grass_shadow_dark1.png', // 5 HP (maior)
+      'assets/Rock2_grass_shadow_dark2.png', // 4 HP
+      'assets/Rock2_grass_shadow_dark3.png', // 3 HP
+      'assets/Rock2_grass_shadow_dark4.png', // 2 HP
+      'assets/Rock2_grass_shadow_dark5.png'  // 1 HP (menor)
+    ],
+    iron_rock: [
+      'assets/Rock1_grass_shadow_dark1.png', // 5 HP (maior)
+      'assets/Rock1_grass_shadow_dark2.png', // 4 HP
+      'assets/Rock1_grass_shadow_dark3.png', // 3 HP
+      'assets/Rock1_grass_shadow_dark4.png', // 2 HP
+      'assets/Rock1_grass_shadow_dark5.png'  // 1 HP (menor)
+    ]
+  };
 
-  function loadRealBronzeRock() {
-    var set = api.resources.bronze_rock;
-    BRONZE_ROCK_FILES.forEach(function (path, i) {
+  function loadRealRockSprites() {
+    for (var type in REAL_ROCK_FILES) loadRockStages(type, REAL_ROCK_FILES[type]);
+  }
+
+  function loadRockStages(type, files) {
+    var set = api.resources[type];
+    files.forEach(function (path, i) {
       var img = new Image();
       img.onload = function () {
         var m = makeCanvas(set.w, set.h);
@@ -300,8 +319,8 @@ var ASSETS = (function () {
   function createResources() {
     return {
       tree:        createTree(),
-      iron_rock:   createRock(PAL.gray, PAL.iron),
-      bronze_rock: createBronzeRockStages(),
+      iron_rock:   createRockStages(ROCK_STAGE_COLORS.iron_rock),
+      bronze_rock: createRockStages(ROCK_STAGE_COLORS.bronze_rock),
       stone_rock:  createRock(PAL.grayDark, PAL.gray)
     };
   }
@@ -409,7 +428,7 @@ var ASSETS = (function () {
       api.items = createItems();
       api.weaponIcons = createWeaponIcons();
       api.buildings = { blacksmith: createBlacksmith() };
-      if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealBronzeRock();
+      if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealRockSprites();
     }
   };
   return api;
