@@ -30,6 +30,7 @@
       particles: [],
       pops: [],
       inventory: {},
+      gold: 0,
       solids: [],
       message: null,
       messageTime: 0

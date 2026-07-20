@@ -1,33 +1,47 @@
-// equipment.js — itens equipados do jogador. Cada slot guarda o id de uma
-// receita; ao mudar, recalcula e injeta os modificadores em stats.
-// O slot 'weapon' (machado/picareta) é contextual e vem de player.weapon —
-// não é gerenciado aqui (não tem modificadores neste milestone).
+// equipment.js — itens equipados do jogador.
+// Slots vêm de EQUIP_SLOTS (data.js): arma/bota são permanentes (só upgrade),
+// peito/anel são removíveis. `owned` registra tudo que já foi forjado, para que
+// um item removido possa ser reequipado depois.
 'use strict';
-
-// Slots geridos pela forja (ordem = ordem de exibição no painel).
-var EQUIP_SLOTS = ['sword', 'boot'];
 
 function Equipment(stats) {
   this.stats = stats;
-  this.slots = {};
-  for (var i = 0; i < EQUIP_SLOTS.length; i++) this.slots[EQUIP_SLOTS[i]] = null;
+  this.slots = {};   // slotKey -> recipeId equipado (ou null)
+  this.owned = {};   // recipeId -> true (já forjado)
+  for (var i = 0; i < EQUIP_SLOT_ORDER.length; i++) this.slots[EQUIP_SLOT_ORDER[i]] = null;
   this.recompute();
 }
 
 Equipment.prototype.equip = function (recipeId) {
   var r = RECIPE_BY_ID[recipeId];
   if (!r) return;
+  this.owned[recipeId] = true;
   this.slots[r.slot] = recipeId;
   this.recompute();
 };
 
-// Item único: já forjado/equipado?
-Equipment.prototype.has = function (recipeId) {
-  for (var s in this.slots) if (this.slots[s] === recipeId) return true;
-  return false;
+// Remove um item de um slot removível (arma/bota não podem ser removidos).
+Equipment.prototype.unequip = function (slotKey) {
+  var meta = EQUIP_SLOTS[slotKey];
+  if (!meta || !meta.removable) return;
+  this.slots[slotKey] = null;
+  this.recompute();
 };
 
-// Reconstrói a lista de modificadores a partir dos itens equipados.
+// Clique num slot removível: tira se estiver equipado, ou recoloca o item já
+// possuído daquele slot se estiver vazio.
+Equipment.prototype.toggleSlot = function (slotKey) {
+  var meta = EQUIP_SLOTS[slotKey];
+  if (!meta || !meta.removable) return;
+  if (this.slots[slotKey]) { this.unequip(slotKey); return; }
+  for (var id in this.owned) {
+    if (RECIPE_BY_ID[id] && RECIPE_BY_ID[id].slot === slotKey) { this.equip(id); return; }
+  }
+};
+
+Equipment.prototype.owns = function (recipeId) { return !!this.owned[recipeId]; };
+
+// Reconstrói os modificadores a partir dos itens equipados.
 Equipment.prototype.recompute = function () {
   var mods = [];
   for (var s in this.slots) {

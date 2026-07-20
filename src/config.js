@@ -46,10 +46,11 @@ var CONFIG = {
   DELIVER_INTERVAL: 0.2,     // s entre cada madeira voando até a área
   UNLOCK_MSG_TIME: 2,        // s da mensagem "FERREIRO DESBLOQUEADO"
 
-  // Forja
+  // Forja / comércio
   FORGE_TIME: 3,             // s de forja (padrão; cada receita pode ter o seu)
   SMITH_INTERACT_RADIUS: 34, // px de proximidade para exibir [E] FORJAR
   DENY_FLASH_TIME: 0.3,      // s do feedback de negação (recurso insuficiente)
+  GOLD_PER_ITEM: 3,          // gold recebido ao vender 1 coletável (fixo p/ todos)
 
   // HUD / painel de personagem
   HUD_PULSE_TIME: 0.25,      // s do pulso do contador ao coletar

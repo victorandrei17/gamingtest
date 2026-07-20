@@ -56,6 +56,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `FORGE_TIME` | 3 | Segundos de forja (padrão; cada receita pode sobrescrever) |
 | `SMITH_INTERACT_RADIUS` | 34 | Proximidade (px) para exibir `[E] FORJAR` |
 | `DENY_FLASH_TIME` | 0.3 | Feedback de negação ao tentar forjar sem recursos |
+| `GOLD_PER_ITEM` | 3 | Gold recebido ao vender 1 coletável (fixo para todos) |
 | `HUD_PULSE_TIME` | 0.25 | Duração do pulso do contador do HUD ao coletar |
 | `FLOAT_TEXT_TIME` | 0.8 | Duração do `+1` flutuante ao coletar |
 | `STAT_FLASH_TIME` | 1.5 | Duração do destaque dourado ao ganhar um bônus |
@@ -125,8 +126,20 @@ Ao forjar, o custo é debitado na hora, a barra de progresso roda `time` segundo
 (mesmo com a janela fechada) e, ao concluir, `equipment.equip(id)` recalcula os
 atributos — o bônus vale imediatamente.
 
-**Controles novos:** `[E]` forja (perto do ferreiro), `[I]`/`[TAB]` painel de
-personagem, `ESC` fecha a forja, mouse+teclado na janela de forja.
+### Equipamento, venda e gold
+
+`EQUIP_SLOTS` (`data.js`) define os slots de forma declarativa: `weapon` e `boot`
+são **permanentes** (`removable:false`, só recebem upgrade); `chest` e `ring` são
+**removíveis** (`removable:true`). A receita aponta o slot que ocupa via `slot`.
+`equipment.owned` guarda tudo já forjado, então um item removido pode ser reequipado.
+
+O ferreiro (tecla `E`) tem duas abas: **FORJAR** e **VENDER**. Na venda, cada
+coletável vale `CONFIG.GOLD_PER_ITEM` gold (fixo). O gold acumula em `world.gold` e
+aparece no rodapé do inventário — reservado para revelar novas áreas no próximo passo.
+
+**Controles:** `[C]` equipamento + status, `[I]` inventário (com total de gold),
+`[E]` ferreiro (forjar/vender) perto da casa, `ESC` fecha, mouse+teclado nas janelas.
+Equipamento, inventário e ferreiro são mutuamente exclusivos (abrir um fecha os outros).
 
 ## Sprites a substituir (`src/assets.js`)
 
@@ -176,6 +189,10 @@ seus arquivos tiverem outros nomes. São carregados por cima dos placeholders
 - **Receitas e equipamento declarativos**: novas forjas/slots = novas entradas em
   `RECIPES`; a UI de forja e o painel se adaptam sozinhos.
 - **Forja em background com uma fila de 1** — base pronta para múltiplas forjas/fila.
+- **Slots removíveis vs. permanentes** já modelados em `EQUIP_SLOTS`; peito/anel
+  esperam apenas suas receitas para virem itens equipáveis.
+- **Economia de gold** pronta (`world.gold`, venda a `GOLD_PER_ITEM`) — reservada
+  para o desbloqueio/revelação de novas áreas.
 - **HUD centralizado** (`hud.js`) com painel modular (boneco, atributos, grade) e
   primitivas de UI reutilizáveis (`ASSETS.drawPanel` / `drawSlot`).
 - **Tabelas de dados** de recursos, armas, construções e estágios de dano continuam

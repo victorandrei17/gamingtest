@@ -50,6 +50,21 @@ Stats.prototype.display = function (stat) {
   return String(Math.round(v));
 };
 
+// Texto "base (+bônus)" para a janela de STATUS (só mostra o parêntese se houver bônus).
+Stats.prototype.statusText = function (stat) {
+  var final = this.get(stat), base = this.base[stat];
+  if (stat === 'moveSpeed') {
+    var bp = Math.round(final / base * 100) - 100;
+    return bp ? '100% (+' + bp + '%)' : '100%';
+  }
+  if (stat === 'attackSpeed') {
+    var d = final - base;
+    return d ? base.toFixed(1) + 'x (+' + d.toFixed(1) + ')' : base.toFixed(1) + 'x';
+  }
+  var db = final - base;
+  return db ? Math.round(base) + ' (+' + Math.round(db) + ')' : String(Math.round(base));
+};
+
 // Descrição declarativa de um modificador (ex.: "Dano +1", "Velocidade +20%").
 Stats.describeMod = function (m) {
   var label = STAT_LABELS[m.stat] || m.stat;

@@ -458,6 +458,20 @@ var ASSETS = (function () {
     px(b.ctx, PAL.trunk, 4, 9, 7, 1);
     px(b.ctx, PAL.skin, 4, 3, 2, 1);        // brilho
     icons.boot = b.canvas;
+    var c = makeCanvas(12, 12); // peito (peitoral)
+    px(c.ctx, PAL.grayDark, 2, 2, 8, 2);
+    px(c.ctx, PAL.gray, 3, 3, 6, 7);
+    px(c.ctx, PAL.iron, 4, 4, 4, 5);
+    px(c.ctx, PAL.white, 4, 4, 1, 2);
+    px(c.ctx, PAL.grayDark, 3, 3, 1, 7); px(c.ctx, PAL.grayDark, 8, 3, 1, 7);
+    icons.chest = c.canvas;
+    var g = makeCanvas(12, 12); // anel
+    px(g.ctx, PAL.bronze, 4, 4, 4, 1);
+    px(g.ctx, PAL.bronze, 3, 5, 1, 4); px(g.ctx, PAL.bronze, 8, 5, 1, 4);
+    px(g.ctx, PAL.bronze, 4, 9, 4, 1);
+    px(g.ctx, '#6ac0e8', 5, 2, 2, 2);       // gema
+    px(g.ctx, PAL.white, 5, 2, 1, 1);
+    icons.ring = g.canvas;
     return icons;
   }
 

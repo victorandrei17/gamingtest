@@ -13,7 +13,7 @@ var RECIPES = [
   {
     id: 'sword',
     name: 'Espada',
-    slot: 'sword',
+    slot: 'weapon',
     icon: 'sword',
     cost: { wood: 2, iron_ore: 2 },
     time: CONFIG.FORGE_TIME,

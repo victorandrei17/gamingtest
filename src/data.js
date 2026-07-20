@@ -56,3 +56,14 @@ var BUILDINGS = {
     height: 40
   }
 };
+
+// Slots de equipamento (declarativo). removable=false: permanente, só recebe
+// upgrade (arma/bota, em linha abaixo do boneco); removable=true: pode ser
+// removido (peito/anel, nas laterais).
+var EQUIP_SLOTS = {
+  weapon: { label: 'ARMA',  removable: false },
+  boot:   { label: 'BOTA',  removable: false },
+  chest:  { label: 'PEITO', removable: true },
+  ring:   { label: 'ANEL',  removable: true }
+};
+var EQUIP_SLOT_ORDER = ['weapon', 'boot', 'chest', 'ring'];
