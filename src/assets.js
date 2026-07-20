@@ -198,19 +198,37 @@ var ASSETS = (function () {
   // Opcionalmente { stages: [c0..cN] } no lugar de `normal`: sprites de
   // dano progressivo (índice 0 = vida cheia, último = 1 de vida).
   // ------------------------------------------------------------------
-  function createTree() {
-    var m = makeCanvas(24, 32);
-    px(m.ctx, PAL.trunkDark, 10, 22, 4, 10);
-    px(m.ctx, PAL.trunk, 10, 22, 2, 10);
-    px(m.ctx, PAL.leaf, 4, 4, 16, 18);
-    px(m.ctx, PAL.leaf, 2, 8, 20, 10);
-    px(m.ctx, PAL.leafLight, 6, 6, 6, 6);
-    px(m.ctx, PAL.darkGreen, 16, 14, 5, 6);
-    var d = makeCanvas(24, 32); // árvore caída
+  // Árvore com estágios de dano: a copa/tronco encolhem a cada hit
+  // (5 HP = maior → 1 HP = muda). Frame 24x32 ancorado na base.
+  function drawTreeStage(ctx, cw, ch, th) {
+    var cx = 12, baseY = 32;
+    var tw = th >= 8 ? 4 : (th >= 5 ? 3 : 2);       // tronco encolhe junto
+    var tx = cx - Math.floor(tw / 2);
+    px(ctx, PAL.trunkDark, tx, baseY - th, tw, th);
+    px(ctx, PAL.trunk, tx, baseY - th, Math.max(1, tw - 2), th);
+    var cxb = cx - Math.floor(cw / 2);              // copa centrada acima do tronco
+    var cyTop = baseY - th - ch + 2;
+    px(ctx, PAL.leaf, cxb + 1, cyTop, cw - 2, ch);
+    px(ctx, PAL.leaf, cxb, cyTop + Math.floor(ch * 0.25), cw, Math.max(1, Math.floor(ch * 0.55)));
+    px(ctx, PAL.leafLight, cxb + 2, cyTop + 2, Math.max(2, Math.floor(cw * 0.3)), Math.max(2, Math.floor(ch * 0.3))); // brilho
+    px(ctx, PAL.darkGreen, cxb + cw - Math.max(2, Math.floor(cw * 0.35)), cyTop + Math.floor(ch * 0.5),
+       Math.max(2, Math.floor(cw * 0.3)), Math.max(2, Math.floor(ch * 0.35))); // sombra
+  }
+
+  function createTreeStages() {
+    // Índice 0 = 5 HP (maior) ... índice 4 = 1 HP (menor). [copaW, copaH, tronco]
+    var sizes = [[20, 18, 10], [16, 15, 9], [12, 12, 7], [9, 9, 5], [6, 6, 4]];
+    var stages = [];
+    for (var i = 0; i < sizes.length; i++) {
+      var m = makeCanvas(24, 32);
+      drawTreeStage(m.ctx, sizes[i][0], sizes[i][1], sizes[i][2]);
+      stages.push(m.canvas);
+    }
+    var d = makeCanvas(24, 32); // árvore caída (destruída)
     px(d.ctx, PAL.trunkDark, 2, 26, 20, 5);
     px(d.ctx, PAL.trunk, 2, 26, 20, 2);
     px(d.ctx, PAL.leaf, 0, 24, 6, 8);
-    return { normal: m.canvas, destroyed: d.canvas, w: 24, h: 32, anchorX: 12, anchorY: 31 };
+    return { stages: stages, destroyed: d.canvas, w: 24, h: 32, anchorX: 12, anchorY: 31 };
   }
 
   function createRock(baseColor, fleckColor) {
@@ -279,7 +297,14 @@ var ASSETS = (function () {
 
   // Arte real opcional (assets/). Um arquivo por estágio de dano, do maior
   // (5 HP) ao menor (1 HP). Carregada só com CONFIG.USE_REAL_ROCK_SPRITES.
-  var REAL_ROCK_FILES = {
+  var REAL_STAGE_FILES = {
+    tree: [
+      'assets/Tree_grass_shadow_dark1.png', // 5 HP (maior)
+      'assets/Tree_grass_shadow_dark2.png', // 4 HP
+      'assets/Tree_grass_shadow_dark3.png', // 3 HP
+      'assets/Tree_grass_shadow_dark4.png', // 2 HP
+      'assets/Tree_grass_shadow_dark5.png'  // 1 HP (menor)
+    ],
     bronze_rock: [
       'assets/Rock2_grass_shadow_dark1.png', // 5 HP (maior)
       'assets/Rock2_grass_shadow_dark2.png', // 4 HP
@@ -296,11 +321,11 @@ var ASSETS = (function () {
     ]
   };
 
-  function loadRealRockSprites() {
-    for (var type in REAL_ROCK_FILES) loadRockStages(type, REAL_ROCK_FILES[type]);
+  function loadRealStageSprites() {
+    for (var type in REAL_STAGE_FILES) loadStageSprites(type, REAL_STAGE_FILES[type]);
   }
 
-  function loadRockStages(type, files) {
+  function loadStageSprites(type, files) {
     var set = api.resources[type];
     files.forEach(function (path, i) {
       var img = new Image();
@@ -318,7 +343,7 @@ var ASSETS = (function () {
 
   function createResources() {
     return {
-      tree:        createTree(),
+      tree:        createTreeStages(),
       iron_rock:   createRockStages(ROCK_STAGE_COLORS.iron_rock),
       bronze_rock: createRockStages(ROCK_STAGE_COLORS.bronze_rock),
       stone_rock:  createRock(PAL.grayDark, PAL.gray)
@@ -428,7 +453,7 @@ var ASSETS = (function () {
       api.items = createItems();
       api.weaponIcons = createWeaponIcons();
       api.buildings = { blacksmith: createBlacksmith() };
-      if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealRockSprites();
+      if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealStageSprites();
     }
   };
   return api;

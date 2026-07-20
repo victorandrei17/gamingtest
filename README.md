@@ -94,7 +94,7 @@ de `assets.js` por carregamento de imagens mantendo a interface `ASSETS.*`:
 | Sprite | Tamanho (px) | Frames necessários |
 |---|---|---|
 | Jogador (menino e menina) | 16×22, âncora nos pés (8,21) | idle ×1, walk ×4, ataque ×3 **por arma** — nas 4 direções (esquerda pode espelhar a direita) |
-| Árvore | 24×32, âncora (12,31) | normal + destruída (caída) |
+| **Árvore (5 estágios de dano)** | 24×32, âncora (12,31) | 5 frames do maior (5 HP) ao menor (1 HP) + destruída (caída) |
 | Rocha de pedra | 20×16, âncora (10,15) | normal + quebrada |
 | **Rochas de bronze e ferro (5 estágios de dano)** | 24×20, âncora (12,19) | 5 frames do maior (5 HP) ao menor (1 HP) + quebrada, por tipo |
 | Itens/ícones (madeira, minérios, pedra) | 8×8 | 1 (usado no chão e no HUD) |
@@ -104,26 +104,26 @@ de `assets.js` por carregamento de imagens mantendo a interface `ASSETS.*`:
 
 O texto usa uma fonte bitmap 3×5 embutida (`ASSETS.drawText`) para ficar sem antialias.
 
-### Estágios de dano (rochas de bronze e ferro)
+### Estágios de dano (árvore, rocha de bronze e rocha de ferro)
 
-As rochas de bronze e ferro têm **5 HP** e mostram um sprite diferente por vida
-restante, encolhendo a cada hit (5 HP = maior → 1 HP = menor). O sprite é escolhido
-por `Harvestable.currentNormalImage()` via `maxHp - hp`, então qualquer recurso ganha
-estágios só declarando `stages: [...]` no lugar de `normal` em `assets.js` e o
-`hp` correspondente em `data.js`.
+Árvore, rocha de bronze e rocha de ferro têm **5 HP** e mostram um sprite diferente
+por vida restante, encolhendo a cada hit (5 HP = maior → 1 HP = menor). O sprite é
+escolhido por `Harvestable.currentNormalImage()` via `maxHp - hp`, então qualquer
+recurso ganha estágios só declarando `stages: [...]` no lugar de `normal` em
+`assets.js` e o `hp` correspondente em `data.js`.
 
-Os placeholders são gerados por `createRockStages(cor)`, com a paleta de cada rocha
-em `ROCK_STAGE_COLORS` (adicione uma entrada para dar estágios a uma nova rocha).
-Para usar os PNGs reais:
+Os placeholders vêm de `createTreeStages()` (árvore) e `createRockStages(cor)`
+(rochas, com a paleta de cada uma em `ROCK_STAGE_COLORS`). Para usar os PNGs reais:
 
 1. Coloque os arquivos em `assets/` (do maior/5 HP ao menor/1 HP):
+   - Árvore: `Tree_grass_shadow_dark1.png` … `Tree_grass_shadow_dark5.png`
    - Bronze: `Rock2_grass_shadow_dark1.png` … `Rock2_grass_shadow_dark5.png`
    - Ferro:  `Rock1_grass_shadow_dark1.png` … `Rock1_grass_shadow_dark5.png`
 2. Ligue `USE_REAL_ROCK_SPRITES: true` em `config.js`.
 
-Os nomes dos arquivos ficam em `REAL_ROCK_FILES` (`assets.js`) — ajuste ali se os
+Os nomes dos arquivos ficam em `REAL_STAGE_FILES` (`assets.js`) — ajuste ali se os
 seus arquivos tiverem outros nomes. São carregados por cima dos placeholders
-(`loadRealRockSprites()`); se algum faltar, o placeholder daquele estágio permanece.
+(`loadRealStageSprites()`); se algum faltar, o placeholder daquele estágio permanece.
 
 ## Pronto para o Milestone 2
 

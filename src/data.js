@@ -28,7 +28,7 @@ var WEAPON_TYPES = {
 // A arte cai num placeholder genérico da categoria se assets.js não tiver
 // sprite específico.
 var RESOURCE_TYPES = {
-  tree:        { name: 'Árvore',          category: 'tree', hp: 2, drops: 'wood' },
+  tree:        { name: 'Árvore',          category: 'tree', hp: 5, drops: 'wood' },
   iron_rock:   { name: 'Rocha de Ferro',       category: 'rock', hp: 5, drops: 'iron_ore' },
   bronze_rock: { name: 'Rocha de Bronze',      category: 'rock', hp: 5, drops: 'bronze_ore' },
   stone_rock:  { name: 'Rocha de Pedra',       category: 'rock', hp: 2, drops: 'stone_piece' }
