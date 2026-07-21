@@ -46,6 +46,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `DESTROYED_SPRITE_TIME` | 0.3 | Tempo exibindo o sprite destruído |
 | `SPAWN_ANIM_TIME` | 0.4 | Duração da animação de surgimento |
 | `HEALTHBAR_HIDE_TIME` | 3 | Segundos sem dano até esconder a barra de vida |
+| `START_INVENTORY_QTY` | 10 | Quantidade inicial de cada coletável (facilita testar forja/venda sem coletar antes) |
 | `COLLECT_RADIUS` | 20 | Raio de atração dos drops (px) |
 | `DROP_ARC_TIME` | 0.35 | Duração do arco de ejeção do drop |
 | `MAGNET_TIME` | 0.25 | Duração do tween de magnetismo até o jogador |

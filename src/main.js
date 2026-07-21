@@ -40,7 +40,7 @@
     w.equipment = new Equipment(w.stats);
 
     var i;
-    for (i = 0; i < INVENTORY_ORDER.length; i++) w.inventory[INVENTORY_ORDER[i]] = 0;
+    for (i = 0; i < INVENTORY_ORDER.length; i++) w.inventory[INVENTORY_ORDER[i]] = CONFIG.START_INVENTORY_QTY;
     for (i = 0; i < LEVEL.objects.length; i++) {
       var o = LEVEL.objects[i];
       w.harvestables.push(new Harvestable(o.type, o.x, o.y));

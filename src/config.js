@@ -35,6 +35,9 @@ var CONFIG = {
   SPAWN_ANIM_TIME: 0.4,      // s da animação de surgimento
   HEALTHBAR_HIDE_TIME: 3,    // s sem dano para esconder a barra de vida
 
+  // Inventário inicial (facilita testar forja/venda sem precisar coletar antes)
+  START_INVENTORY_QTY: 10,   // quantidade de cada coletável ao começar
+
   // Drops / coleta
   COLLECT_RADIUS: 20,        // px — raio de atração do item
   DROP_ARC_TIME: 0.35,       // s do arco de ejeção
