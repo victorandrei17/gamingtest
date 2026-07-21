@@ -114,18 +114,15 @@ var HUD = (function () {
       return { key: key, rect: rect, icon: ASSETS.forgeIcons[key], dim: true,
                name: meta.label, mods: [], filled: false, removable: true, note: '(vazio)' };
     }
-    // Slot de arma forjada (espada): permanente, upgrade.
+    // Slot de item forjado (espada, bota, machado/picareta de bronze):
+    // permanente, só recebe upgrade. Por convenção recipe.id === recipe.icon,
+    // então "on" é simplesmente o slot apontar pra esse item.
     function forgedSlot(slotKey, iconKey, label, rect) {
-      var on = eq.slots[slotKey] === iconKey || (slotKey === 'weapon' && eq.slots.weapon === 'sword');
+      var on = eq.slots[slotKey] === iconKey;
       var rec = RECIPE_BY_ID[eq.slots[slotKey]];
       return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: !on,
                name: label, mods: on && rec ? rec.modifiers : [], filled: on, removable: false,
                note: on ? null : '(nao forjada)' };
-    }
-    // Slot de ferramenta base (machado/picareta): sempre presente.
-    function toolSlot(weaponKey, rect) {
-      return { key: null, rect: rect, icon: ASSETS.weaponIcons[weaponKey], dim: false,
-               name: WEAPON_TYPES[weaponKey].name, mods: [], filled: true, removable: false, note: '(ferramenta)' };
     }
 
     var rowY = dollTop + 50;
@@ -138,8 +135,8 @@ var HUD = (function () {
         removableSlot('chest', { x: dollX - 30, y: dollTop + 8, w: Ss, h: Ss }),
         removableSlot('ring',  { x: dollX + 42, y: dollTop + 8, w: Ss, h: Ss }),
         forgedSlot('weapon', 'sword', 'Espada', rowRect(0)),
-        toolSlot('axe', rowRect(1)),
-        toolSlot('pickaxe', rowRect(2)),
+        forgedSlot('axe', 'bronze_axe', 'Machado', rowRect(1)),
+        forgedSlot('pickaxe', 'bronze_pickaxe', 'Picareta', rowRect(2)),
         forgedSlot('boot', 'boot', 'Bota', rowRect(3))
       ]
     };

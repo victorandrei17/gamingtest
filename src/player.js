@@ -106,7 +106,11 @@ Player.prototype.update = function (dt, world) {
 
   if (this.target && this.weapon) {
     if (this.hitCooldown <= 0) {
-      this.target.takeHit(world.stats.get('damage'), world);
+      // Dano base + bônus de categoria (ex.: Machado de Bronze só soma contra árvores).
+      var category = RESOURCE_TYPES[this.target.type].category;
+      var bonusStat = CATEGORY_DAMAGE_STAT[category];
+      var dmg = world.stats.get('damage') + (bonusStat ? world.stats.get(bonusStat) : 0);
+      this.target.takeHit(dmg, world);
       this.hitCooldown = CONFIG.HIT_COOLDOWN / world.stats.get('attackSpeed');
       this.attackAnimTime = CONFIG.ATTACK_ANIM_TIME;
     }

@@ -29,6 +29,26 @@ var RECIPES = [
     time: CONFIG.FORGE_TIME,
     modifiers: [{ stat: 'moveSpeed', type: 'percent', value: 0.20 }],
     desc: 'Botas resistentes de madeira que deixam voce mais rapido.'
+  },
+  {
+    id: 'bronze_axe',
+    name: 'Machado de Bronze',
+    slot: 'axe',
+    icon: 'bronze_axe',
+    cost: { bronze_ore: 2 },
+    time: CONFIG.FORGE_TIME,
+    modifiers: [{ stat: 'damageTree', type: 'flat', value: 1 }],
+    desc: 'Machado com lamina de bronze. Da dano extra contra arvores.'
+  },
+  {
+    id: 'bronze_pickaxe',
+    name: 'Picareta de Bronze',
+    slot: 'pickaxe',
+    icon: 'bronze_pickaxe',
+    cost: { bronze_ore: 2 },
+    time: CONFIG.FORGE_TIME,
+    modifiers: [{ stat: 'damageRock', type: 'flat', value: 1 }],
+    desc: 'Picareta com ponta de bronze. Da dano extra contra minerios.'
   }
 ];
 

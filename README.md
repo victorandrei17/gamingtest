@@ -129,12 +129,29 @@ Ao forjar, o custo é debitado na hora, a barra de progresso roda `time` segundo
 (mesmo com a janela fechada) e, ao concluir, `equipment.equip(id)` recalcula os
 atributos — o bônus vale imediatamente.
 
+### Dano por categoria de alvo
+
+Além do atributo global `damage` (soma em qualquer golpe), existem atributos de
+bônus que só valem contra uma categoria de objeto: `damageTree` (árvores) e
+`damageRock` (rochas/minérios) — base 0, só existem via modificador de item.
+`CATEGORY_DAMAGE_STAT` (`data.js`) mapeia `category -> stat`; no golpe, `player.js`
+calcula `stats.get('damage') + stats.get(CATEGORY_DAMAGE_STAT[categoriaDoAlvo])`.
+Machado de Bronze (`damageTree +1`) e Picareta de Bronze (`damageRock +1`) usam
+esse mecanismo — o bônus de um nunca vaza para a categoria do outro. Uma nova
+categoria de alvo (ex.: `metal` para um monstro) só precisa de uma entrada nova
+em `CATEGORY_DAMAGE_STAT` + o `base` correspondente em `Stats()` (`stats.js`).
+
 ### Equipamento, venda e gold
 
-`EQUIP_SLOTS` (`data.js`) define os slots de forma declarativa: `weapon` e `boot`
-são **permanentes** (`removable:false`, só recebem upgrade); `chest` e `ring` são
-**removíveis** (`removable:true`). A receita aponta o slot que ocupa via `slot`.
-`equipment.owned` guarda tudo já forjado, então um item removido pode ser reequipado.
+`EQUIP_SLOTS` (`data.js`) define os slots de forma declarativa: `weapon`, `boot`,
+`axe` e `pickaxe` são **permanentes** (`removable:false`, só recebem upgrade — o
+slot fica esmaecido até a receita correspondente ser forjada); `chest` e `ring`
+são **removíveis** (`removable:true`). A ferramenta base (machado/picareta) já é
+usável desde o início — o slot de equipamento só rastreia o *upgrade* de bronze
+e o bônus de dano que ele concede, sem afetar qual ferramenta o jogador empunha
+automaticamente (`WEAPON_FOR_CATEGORY`, inalterado). A receita aponta o slot que
+ocupa via `slot`; `equipment.owned` guarda tudo já forjado, então um item
+removido (peito/anel) pode ser reequipado.
 
 O ferreiro (tecla `E`) tem duas abas: **FORJAR** e **VENDER**. Na venda, cada
 coletável vale `CONFIG.GOLD_PER_ITEM` gold (fixo), e só itens com quantidade > 0
@@ -168,6 +185,7 @@ de `assets.js` por carregamento de imagens mantendo a interface `ASSETS.*`:
 | **Rochas de bronze, ferro e pedra (5 estágios de dano)** | 24×20, âncora (12,19) | 5 frames do maior (5 HP) ao menor (1 HP) + quebrada, por tipo |
 | Itens/ícones (madeira, minérios, pedra) | 8×8 | 1 (usado no chão e no HUD) |
 | Ícones de arma (machado, picareta) | 10×10 | 1 |
+| Ícones de forja (espada, bota, peito, anel, machado de bronze, picareta de bronze) | 12×12 | 1 por receita, chave em `ASSETS.forgeIcons` |
 | Estação do Ferreiro (fornalha + bigorna) | 56×44, âncora (28,43) | construída (a "subida" é recorte progressivo do mesmo sprite) |
 | Chão | 480×270 (ou tileset 16×16) | o xadrez de dev é gerado em `createGround()` — troque só essa função |
 

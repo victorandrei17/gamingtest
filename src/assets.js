@@ -509,6 +509,22 @@ var ASSETS = (function () {
     px(g.ctx, '#6ac0e8', 5, 2, 2, 2);       // gema
     px(g.ctx, PAL.white, 5, 2, 1, 1);
     icons.ring = g.canvas;
+    var ba = makeCanvas(12, 12); // machado de bronze
+    px(ba.ctx, PAL.trunkDark, 5, 3, 2, 9);   // cabo
+    px(ba.ctx, PAL.trunk, 5, 3, 1, 9);
+    px(ba.ctx, PAL.grayDark, 2, 0, 7, 5);    // lâmina (contorno)
+    px(ba.ctx, PAL.bronze, 3, 1, 5, 3);
+    px(ba.ctx, '#f6c84c', 3, 1, 2, 1);       // brilho
+    icons.bronze_axe = ba.canvas;
+    var bp = makeCanvas(12, 12); // picareta de bronze
+    px(bp.ctx, PAL.trunkDark, 5, 3, 2, 9);   // cabo
+    px(bp.ctx, PAL.trunk, 5, 3, 1, 9);
+    px(bp.ctx, PAL.grayDark, 0, 1, 12, 3);   // cabeça (contorno)
+    px(bp.ctx, PAL.bronze, 1, 2, 4, 1);
+    px(bp.ctx, PAL.bronze, 7, 2, 4, 1);
+    px(bp.ctx, '#f6c84c', 1, 2, 2, 1);       // brilho nas duas pontas
+    px(bp.ctx, '#f6c84c', 9, 2, 2, 1);
+    icons.bronze_pickaxe = bp.canvas;
     return icons;
   }
 

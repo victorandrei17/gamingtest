@@ -7,14 +7,18 @@
 var STAT_LABELS = {
   damage:      'Dano',
   moveSpeed:   'Velocidade',
-  attackSpeed: 'Vel. Ataque'
+  attackSpeed: 'Vel. Ataque',
+  damageTree:  'Dano Arvore',   // bônus só contra a categoria 'tree' (CATEGORY_DAMAGE_STAT)
+  damageRock:  'Dano Minerio'   // bônus só contra a categoria 'rock'
 };
 
 function Stats() {
   this.base = {
     damage:      CONFIG.BASE_DAMAGE,
     moveSpeed:   CONFIG.PLAYER_SPEED,
-    attackSpeed: CONFIG.BASE_ATTACK_SPEED
+    attackSpeed: CONFIG.BASE_ATTACK_SPEED,
+    damageTree:  0,             // sem base própria: só existe via modificador de item
+    damageRock:  0
   };
   this.mods = []; // lista plana de modificadores { stat, type, value }
 }

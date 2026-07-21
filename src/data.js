@@ -42,6 +42,15 @@ var WEAPON_FOR_CATEGORY = {};
   }
 })();
 
+// Categoria de alvo -> atributo de dano bônus (stats.js). Um item forjado com
+// esse stat (ex.: Machado de Bronze -> damageTree) só soma dano contra objetos
+// daquela categoria. Nova categoria de alvo? adicione a entrada aqui + o
+// stat correspondente em Stats() (stats.js).
+var CATEGORY_DAMAGE_STAT = {
+  tree: 'damageTree',
+  rock: 'damageRock'
+};
+
 // Construções desbloqueáveis.
 // Para adicionar outra: nova entrada aqui + instância em level.js.
 // cost: { item: quantidade } — aceita múltiplos itens no futuro,
@@ -58,12 +67,14 @@ var BUILDINGS = {
 };
 
 // Slots de equipamento (declarativo). removable=false: permanente, só recebe
-// upgrade (arma/bota, em linha abaixo do boneco); removable=true: pode ser
-// removido (peito/anel, nas laterais).
+// upgrade (arma/bota/machado/picareta, em linha abaixo do boneco);
+// removable=true: pode ser removido (peito/anel, nas laterais).
 var EQUIP_SLOTS = {
-  weapon: { label: 'ARMA',  removable: false },
-  boot:   { label: 'BOTA',  removable: false },
-  chest:  { label: 'PEITO', removable: true },
-  ring:   { label: 'ANEL',  removable: true }
+  weapon:  { label: 'ARMA',     removable: false },
+  boot:    { label: 'BOTA',     removable: false },
+  axe:     { label: 'MACHADO',  removable: false },
+  pickaxe: { label: 'PICARETA', removable: false },
+  chest:   { label: 'PEITO',    removable: true },
+  ring:    { label: 'ANEL',     removable: true }
 };
-var EQUIP_SLOT_ORDER = ['weapon', 'boot', 'chest', 'ring'];
+var EQUIP_SLOT_ORDER = ['weapon', 'boot', 'axe', 'pickaxe', 'chest', 'ring'];
