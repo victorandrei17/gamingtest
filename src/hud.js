@@ -117,12 +117,23 @@ var HUD = (function () {
     // Slot de item forjado (espada, bota, machado/picareta de bronze):
     // permanente, só recebe upgrade. Por convenção recipe.id === recipe.icon,
     // então "on" é simplesmente o slot apontar pra esse item.
-    function forgedSlot(slotKey, iconKey, label, rect) {
+    // `baseWeaponKey` (opcional): ferramenta comum já em uso (machado/picareta)
+    // que aparece nítida no slot enquanto o upgrade de bronze não foi forjado —
+    // ao forjar, o slot atualiza sozinho para o ícone de bronze.
+    function forgedSlot(slotKey, iconKey, label, rect, baseWeaponKey) {
       var on = eq.slots[slotKey] === iconKey;
       var rec = RECIPE_BY_ID[eq.slots[slotKey]];
-      return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: !on,
-               name: label, mods: on && rec ? rec.modifiers : [], filled: on, removable: false,
-               note: on ? null : '(nao forjada)' };
+      if (on) {
+        return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: false,
+                 name: rec.name, mods: rec.modifiers, filled: true, removable: false, note: null };
+      }
+      if (baseWeaponKey) {
+        return { key: slotKey, rect: rect, icon: ASSETS.weaponIcons[baseWeaponKey], dim: false,
+                 name: WEAPON_TYPES[baseWeaponKey].name, mods: [], filled: true, removable: false,
+                 note: '(ferramenta basica)' };
+      }
+      return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: true,
+               name: label, mods: [], filled: false, removable: false, note: '(nao forjada)' };
     }
 
     var rowY = dollTop + 50;
@@ -135,8 +146,8 @@ var HUD = (function () {
         removableSlot('chest', { x: dollX - 30, y: dollTop + 8, w: Ss, h: Ss }),
         removableSlot('ring',  { x: dollX + 42, y: dollTop + 8, w: Ss, h: Ss }),
         forgedSlot('weapon', 'sword', 'Espada', rowRect(0)),
-        forgedSlot('axe', 'bronze_axe', 'Machado', rowRect(1)),
-        forgedSlot('pickaxe', 'bronze_pickaxe', 'Picareta', rowRect(2)),
+        forgedSlot('axe', 'bronze_axe', 'Machado', rowRect(1), 'axe'),
+        forgedSlot('pickaxe', 'bronze_pickaxe', 'Picareta', rowRect(2), 'pickaxe'),
         forgedSlot('boot', 'boot', 'Bota', rowRect(3))
       ]
     };
