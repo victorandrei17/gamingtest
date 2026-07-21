@@ -183,9 +183,11 @@ removido (peito/anel) pode ser reequipado.
 
 O ferreiro (tecla `E`) tem duas abas: **FORJAR** e **VENDER**. Na venda, cada
 coletável vale `CONFIG.GOLD_PER_ITEM` gold (fixo), e só itens com quantidade > 0
-aparecem na lista (`Forge.sellList()`). O gold acumula em `world.gold` e aparece
-no rodapé do inventário e no rodapé da janela do ferreiro — reservado para revelar
-novas áreas no próximo passo.
+aparecem na grade 2x3 (`Forge.sellList()`). A janela de VENDER usa o mesmo
+tamanho fixo (304x178) da janela de FORJAR — trocar de aba não redimensiona
+a janela. O gold acumula em `world.gold` e aparece no rodapé do inventário e
+no rodapé da janela do ferreiro — reservado para revelar novas áreas no
+próximo passo.
 
 A aba **FORJAR** é uma bancada em 3 colunas (`Forge.drawCraft` em `forge.js`):
 esquerda com a grade de itens forjáveis (ícone por receita, selecionável por mouse

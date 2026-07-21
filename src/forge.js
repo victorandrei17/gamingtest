@@ -214,17 +214,21 @@ Forge.prototype.layout = function () {
     return lay;
   }
 
-  // Modo VENDER: lista estreita, altura adaptável.
-  pw = 230;
-  var headerH = 44, footerH = 18, eh = 34, gap = 4;
-  var n = this.listLength();
-  ph = headerH + Math.max(1, n) * (eh + gap) + footerH;
+  // Modo VENDER: mesmo tamanho de janela do modo FORJAR (304x178) — não muda
+  // de tamanho ao trocar de aba nem conforme a quantidade de itens. Grade
+  // 2x3 (mesma lógica da grade de receitas), com altura de linha fixa.
+  pw = 304; ph = 178;
   x = Math.round((CONFIG.GAME_WIDTH - pw) / 2);
   y = Math.round((CONFIG.GAME_HEIGHT - ph) / 2);
   var s = { mode: 'sell', x: x, y: y, w: pw, h: ph, entries: [] };
   tab(s);
-  var ex = x + 12, ey = y + headerH, ew = pw - 24;
-  for (var i = 0; i < n; i++) s.entries.push({ rect: { x: ex, y: ey + i * (eh + gap), w: ew, h: eh } });
+  var headerH = 44, cols = 2, cw = 138, ceh = 34, cgap = 4;
+  var ex = x + 12, ey = y + headerH;
+  var n = this.listLength();
+  for (var i = 0; i < n; i++) {
+    var col = i % cols, row = Math.floor(i / cols);
+    s.entries.push({ rect: { x: ex + col * (cw + cgap), y: ey + row * (ceh + cgap), w: cw, h: ceh } });
+  }
   return s;
 };
 
@@ -392,6 +396,8 @@ Forge.prototype.drawSell = function (ctx, lay) {
   }
 };
 
+// Célula compacta (2 colunas x 3 linhas, ver layout()): ícone + nome/qtd numa
+// linha, preço + botão na linha de baixo — cabe nos 138px de largura da célula.
 Forge.prototype.drawSellEntry = function (ctx, entry, item, isSel) {
   var rect = entry.rect, PAL = ASSETS.palette;
   var have = this.world.inventory[item] || 0, empty = have <= 0;
@@ -399,14 +405,14 @@ Forge.prototype.drawSellEntry = function (ctx, entry, item, isSel) {
   ASSETS.strokeRect(ctx, rect.x, rect.y, rect.w, rect.h, isSel ? PAL.bronze : PAL.grayDark);
   ctx.save();
   if (empty) ctx.globalAlpha = 0.5;
-  ASSETS.drawSlot(ctx, rect.x + 5, rect.y + 6, 22, !empty);
-  ctx.drawImage(ASSETS.items[item], rect.x + 12, rect.y + 13);
-  ASSETS.drawText(ctx, ITEM_TYPES[item].name, rect.x + 34, rect.y + 8, PAL.white, 1);
-  ASSETS.drawText(ctx, 'x' + have, rect.x + 34, rect.y + 19, PAL.iron, 1);
+  ASSETS.drawSlot(ctx, rect.x + 3, rect.y + 3, 18, !empty);
+  ctx.drawImage(ASSETS.items[item], rect.x + 8, rect.y + 8);
+  ASSETS.drawText(ctx, ITEM_TYPES[item].name, rect.x + 24, rect.y + 4, PAL.white, 1);
+  ASSETS.drawText(ctx, 'x' + have, rect.x + 24, rect.y + 13, PAL.iron, 1);
   ctx.restore();
-  var price = '+' + CONFIG.GOLD_PER_ITEM + ' GOLD';
-  ASSETS.drawText(ctx, price, rect.x + rect.w - ASSETS.textWidth(price, 1) - 60, rect.y + 13, '#f6c84c', 1);
+  var price = '+' + CONFIG.GOLD_PER_ITEM;
+  ASSETS.drawText(ctx, price, rect.x + 24, rect.y + 24, '#f6c84c', 1);
   var label = empty ? 'SEM ITENS' : 'VENDER';
-  ASSETS.drawText(ctx, label, rect.x + rect.w - ASSETS.textWidth(label, 1) - 6, rect.y + 13,
+  ASSETS.drawText(ctx, label, rect.x + rect.w - ASSETS.textWidth(label, 1) - 4, rect.y + 24,
     empty ? PAL.grayDark : (this.denyFlash > 0 && isSel ? '#e05a5a' : PAL.leafLight), 1);
 };
