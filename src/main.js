@@ -18,6 +18,17 @@
   var world = null;
   var time = 0;
 
+  // Opções da cena de seleção — compartilhado entre updateSelect (clique/
+  // toque) e drawSelect (desenho), pra não duplicar as posições.
+  var SELECT_OPTIONS = [
+    { id: 'boy', label: 'MENINO', x: 180 },
+    { id: 'girl', label: 'MENINA', x: 300 }
+  ];
+  function selectOptionRect(o) { return { x: o.x - 20, y: 108, w: 40, h: 64 }; }
+  function pointInRect(p, r) {
+    return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+  }
+
   // ----------------------------------------------------------------
   // Mundo
   // ----------------------------------------------------------------
@@ -206,8 +217,21 @@
     if (INPUT.wasPressed('KeyA') || INPUT.wasPressed('ArrowLeft')) selectIndex = 0;
     if (INPUT.wasPressed('KeyD') || INPUT.wasPressed('ArrowRight')) selectIndex = 1;
     if (INPUT.wasPressed('Enter') || INPUT.wasPressed('Space')) {
-      world = createWorld(selectIndex === 0 ? 'boy' : 'girl');
+      world = createWorld(SELECT_OPTIONS[selectIndex].id);
       scene = 'game';
+    }
+
+    // Mouse/touch: passar por cima destaca (equivalente às setas) e
+    // clicar/tocar já escolhe e começa — sem isso não dá pra jogar só
+    // com toque no celular, já que não existe teclado.
+    for (var i = 0; i < SELECT_OPTIONS.length; i++) {
+      if (pointInRect(INPUT.mouse, selectOptionRect(SELECT_OPTIONS[i]))) {
+        selectIndex = i;
+        if (INPUT.wasClicked()) {
+          world = createWorld(SELECT_OPTIONS[i].id);
+          scene = 'game';
+        }
+      }
     }
   }
 
@@ -220,10 +244,7 @@
       Math.round((CONFIG.GAME_WIDTH - ASSETS.textWidth(title, 2)) / 2), 50,
       ASSETS.palette.white, 2);
 
-    var opts = [
-      { id: 'boy', label: 'MENINO', x: 180 },
-      { id: 'girl', label: 'MENINA', x: 300 }
-    ];
+    var opts = SELECT_OPTIONS;
     for (var i = 0; i < opts.length; i++) {
       var o = opts[i];
       var frame = ASSETS.players[o.id].down.idle[0];
@@ -241,7 +262,7 @@
         selected ? ASSETS.palette.white : ASSETS.palette.gray, 1);
     }
 
-    var hint = 'SETAS PARA ESCOLHER - ENTER PARA COMECAR';
+    var hint = 'SETAS + ENTER OU CLIQUE PARA COMECAR';
     ASSETS.drawText(ctx, hint,
       Math.round((CONFIG.GAME_WIDTH - ASSETS.textWidth(hint, 1)) / 2), 200,
       ASSETS.palette.gray, 1);

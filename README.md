@@ -21,8 +21,9 @@ python -m http.server
 # http://localhost:8000
 ```
 
-**Controles:** WASD ou setas para andar (8 direções). Na tela inicial, setas para
-escolher o personagem e Enter/Espaço para começar. O ataque é automático ao encostar
+**Controles:** WASD ou setas para andar (8 direções). Na tela inicial, setas +
+Enter/Espaço, ou clique/toque direto no personagem (funciona em touch de
+celular) para escolher e começar. O ataque é automático ao encostar
 em um objeto atingível (a arma correta é selecionada sozinha).
 
 ## Constantes (`src/config.js`)
