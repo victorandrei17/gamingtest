@@ -124,6 +124,10 @@ var ASSETS = (function () {
     px(ctx, PAL.trunk, -1, -8, 2, 9);            // cabo
     if (weaponId === 'axe') {
       px(ctx, head, -3, -9, 5, 3);               // lâmina do machado
+    } else if (weaponId === 'sword') {
+      px(ctx, PAL.iron, 0, -13, 1, 6);           // lâmina reta
+      px(ctx, PAL.white, 0, -13, 1, 2);          // brilho na ponta
+      px(ctx, PAL.trunkDark, -1, -8, 3, 1);      // guarda
     } else {
       px(ctx, head, -4, -9, 7, 2);               // cabeça da picareta
       px(ctx, head, -4, -8, 2, 2);
@@ -175,6 +179,12 @@ var ASSETS = (function () {
     return m.canvas;
   }
 
+  // Armas com pose de ataque: as de colheita (WEAPON_TYPES: machado/picareta)
+  // + a espada, que é só de combate e não entra em WEAPON_TYPES (não coleta
+  // nenhuma categoria de recurso). Toda arma empunhável pelo jogador precisa
+  // estar aqui, senão Player.draw quebra ao tentar ler o frame inexistente.
+  var PLAYER_ATTACK_WEAPON_IDS = ['axe', 'pickaxe', 'sword'];
+
   function createPlayerSet(shirtColor) {
     var dirs = ['down', 'up', 'left', 'right'];
     var set = {};
@@ -183,7 +193,8 @@ var ASSETS = (function () {
       var frames = { idle: [], walk: [], attack: {} };
       frames.idle.push(drawPlayerFrame(shirtColor, dir, 'idle', 0, null));
       for (var f = 0; f < 4; f++) frames.walk.push(drawPlayerFrame(shirtColor, dir, 'walk', f, null));
-      for (var wId in WEAPON_TYPES) {
+      for (var w = 0; w < PLAYER_ATTACK_WEAPON_IDS.length; w++) {
+        var wId = PLAYER_ATTACK_WEAPON_IDS[w];
         frames.attack[wId] = [];
         for (var af = 0; af < 3; af++) {
           frames.attack[wId].push(drawPlayerFrame(shirtColor, dir, 'attack', af, wId));
