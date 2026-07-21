@@ -110,21 +110,27 @@ var HUD = (function () {
   }
 
   // -------------------------- tracker de quest (4.1) --------------------------
-  // Canto superior direito, discreto: título + progresso (ou só o título nos
-  // objetivos tudo-ou-nada). Destaque dourado breve ao concluir, mesmo
-  // padrão de tempo (CONFIG.UNLOCK_MSG_TIME) das mensagens de desbloqueio.
+  // Canto superior direito, discreto: título + a descrição do objetivo (o que
+  // fazer), com o progresso numérico quando o objetivo não é tudo-ou-nada.
+  // Destaque dourado breve ao concluir, mesmo padrão de tempo
+  // (CONFIG.UNLOCK_MSG_TIME) das mensagens de desbloqueio.
+  var TRACKER_MAX_W = 132;
   function drawQuestTracker(ctx, world) {
     var q = Quests.activeQuest();
     if (!q) return;
     var prog = Quests.currentProgress(world);
-    var label = prog.binary ? q.title : q.title + '  ' + prog.current + '/' + prog.target;
-    var w = ASSETS.textWidth(label, 1) + 8;
+    var body = prog.binary ? q.description : q.description + '  ' + prog.current + '/' + prog.target;
+    var lines = wrapText(body, TRACKER_MAX_W, 1);
+    var w = TRACKER_MAX_W + 8, h = 12 + lines.length * 8 + 3;
     var x = CONFIG.GAME_WIDTH - w - 4, y = 16;
     var flashing = Quests.flashTime() > 0;
-    ctx.fillStyle = flashing ? 'rgba(58,44,26,0.9)' : 'rgba(26,28,44,0.6)';
-    ctx.fillRect(x, y, w, 10);
-    ASSETS.strokeRect(ctx, x, y, w, 10, flashing ? PAL.bronze : 'rgba(139,155,180,0.35)');
-    ASSETS.drawText(ctx, label, x + 4, y + 3, flashing ? '#f6c84c' : PAL.white, 1);
+    ctx.fillStyle = flashing ? 'rgba(58,44,26,0.9)' : 'rgba(26,28,44,0.7)';
+    ctx.fillRect(x, y, w, h);
+    ASSETS.strokeRect(ctx, x, y, w, h, flashing ? PAL.bronze : 'rgba(139,155,180,0.35)');
+    ASSETS.drawText(ctx, q.title, x + 4, y + 3, flashing ? '#f6c84c' : PAL.bronze, 1);
+    for (var i = 0; i < lines.length; i++) {
+      ASSETS.drawText(ctx, lines[i], x + 4, y + 13 + i * 8, flashing ? '#f6c84c' : PAL.white, 1);
+    }
   }
 
   // -------------------------- marcador de objetivo (4.3) --------------------------
