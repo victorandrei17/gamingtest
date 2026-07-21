@@ -76,23 +76,26 @@ Enemy.prototype.takeHit = function (dmg, weaponId, world) {
   if (this.hp <= 0) {
     this.alive = false;
     this.state = 'destroyed';
-    this.timer = 0.4; // duração da animação de despedaçamento
+    // O inimigo só sai de world.enemies (e leva seus deathParticles junto)
+    // depois que o fade termina — senão os pedaços somem cedo demais.
+    this.timer = CONFIG.ENEMY_DEATH_FADE_TIME;
     world.spawnDrop('geleia_rosa', this.x, this.y);
-    // Spawna partículas de despedaçamento
-    this.spawnDeathParticles(world);
+    this.spawnDeathParticles();
   }
 };
 
-Enemy.prototype.spawnDeathParticles = function (world) {
-  for (var i = 0; i < 8; i++) {
-    var angle = (Math.PI * 2 * i) / 8;
-    var speed = 60 + Math.random() * 40;
-    var p = new DeathParticle(
-      this.x, this.y,
-      Math.cos(angle) * speed,
-      Math.sin(angle) * speed - 30
-    );
-    this.deathParticles.push(p);
+// Pedaços de geléia que se despedaçam do corpo, caem no chão por gravidade
+// e ficam parados ali sumindo aos poucos (sem explosão radial).
+Enemy.prototype.spawnDeathParticles = function () {
+  var s = this.sprite();
+  var groundY = this.y + 2; // altura aproximada onde o sprite "pisa"
+  for (var i = 0; i < 6; i++) {
+    var startX = this.x + (Math.random() - 0.5) * s.w * 0.5;
+    var startY = this.y - Math.random() * s.h * 0.3;
+    var vx = (Math.random() - 0.5) * 40; // espalhamento pequeno, não explosivo
+    var vy = -20 - Math.random() * 20;   // pequeno salto ao se despedaçar, depois cai
+    var landY = groundY + (Math.random() - 0.5) * 4;
+    this.deathParticles.push(new DeathParticle(startX, startY, vx, vy, landY));
   }
 };
 
@@ -140,7 +143,9 @@ Enemy.prototype.update = function (dt, world) {
 };
 
 Enemy.prototype.draw = function (ctx) {
-  if (this.state === 'dead') return;
+  // Corpo só aparece vivo — ao morrer, "vira" os pedaços (deathParticles) e
+  // some daqui em diante, senão parece uma explosão em vez de despedaçar.
+  if (this.state !== 'alive') return;
 
   var s = this.sprite();
   var frame = s.idle[Math.floor(this.animTime * CONFIG.ENEMY_IDLE_ANIM_SPEED) % s.idle.length];
@@ -149,7 +154,7 @@ Enemy.prototype.draw = function (ctx) {
 
   ctx.drawImage(frame, dx, dy);
 
-  if (this.flashTime > 0 && this.state === 'alive') {
+  if (this.flashTime > 0) {
     ctx.drawImage(flashCanvasFor(frame), dx, dy);
   }
 };
@@ -174,33 +179,45 @@ Enemy.prototype.drawHealthbar = function (ctx) {
   ctx.fillRect(x, y, Math.round(w * this.hp / this.maxHp), h);
 };
 
-// Partícula de despedaçamento (morte do inimigo)
-function DeathParticle(x, y, vx, vy) {
+// Pedaço de geléia (morte do inimigo): cai por gravidade até `groundY`,
+// pousa e fica parado ali sumindo em fade linear pelo tempo total de vida.
+function DeathParticle(x, y, vx, vy, groundY) {
   this.x = x;
   this.y = y;
   this.vx = vx;
   this.vy = vy;
-  this.life = 0.8;
-  this.maxLife = 0.8;
+  this.groundY = groundY;
+  this.landed = false;
+  this.size = 2 + Math.round(Math.random() * 2); // fixo por partícula (não pisca)
+  this.life = CONFIG.ENEMY_DEATH_FADE_TIME;
+  this.maxLife = CONFIG.ENEMY_DEATH_FADE_TIME;
   this.dead = false;
 }
 
 DeathParticle.prototype.update = function (dt) {
   this.life -= dt;
-  this.vy += 80 * dt; // gravidade
-  this.x += this.vx * dt;
-  this.y += this.vy * dt;
   if (this.life <= 0) this.dead = true;
+
+  if (!this.landed) {
+    this.vy += 220 * dt; // gravidade
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    if (this.y >= this.groundY) {
+      this.y = this.groundY;
+      this.landed = true;
+      this.vx = 0;
+      this.vy = 0;
+    }
+  }
 };
 
 DeathParticle.prototype.draw = function (ctx) {
-  var alpha = this.life / this.maxLife;
-  var size = 4 + Math.random() * 2;
+  var alpha = Math.max(0, this.life / this.maxLife);
   var x = Math.round(this.x);
   var y = Math.round(this.y);
 
   ctx.globalAlpha = alpha;
   ctx.fillStyle = ASSETS.palette.pink;
-  ctx.fillRect(x - size / 2, y - size / 2, size, size);
+  ctx.fillRect(x - this.size / 2, y - this.size / 2, this.size, this.size);
   ctx.globalAlpha = 1.0;
 };

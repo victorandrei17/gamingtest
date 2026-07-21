@@ -66,5 +66,6 @@ var CONFIG = {
   ENEMY_VISION_RADIUS: 36,   // px — distância para detectar o jogador (120 * 30%)
   ENEMY_STOP_DISTANCE: 12,   // px — distância mínima ao seguir (evita sobrepor o jogador)
   ENEMY_HP: 3,               // vida dos inimigos
-  ENEMY_IDLE_ANIM_SPEED: 4   // frames/s da animação de idle
+  ENEMY_IDLE_ANIM_SPEED: 4,  // frames/s da animação de idle
+  ENEMY_DEATH_FADE_TIME: 2   // s até os pedaços da geléia sumirem por completo
 };
