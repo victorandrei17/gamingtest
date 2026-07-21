@@ -99,7 +99,12 @@ Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no co
 - **Nova arma**: entrada em `WEAPON_TYPES` com `targetCategory` + ícone/animação em
   `assets.js`; a seleção automática usa o índice derivado `WEAPON_FOR_CATEGORY`.
 - **Nova construção**: entrada em `BUILDINGS` (custo, tempo, mensagem, tamanho) +
-  instância em `LEVEL.buildings` + sprite em `ASSETS.buildings`.
+  instância em `LEVEL.buildings` + sprite em `ASSETS.buildings`. Só o ferreiro
+  abre a janela de forja (`Forge.nearSmith` filtra por `type: 'blacksmith'`) —
+  outras construções não interferem nesse fluxo. `explosionOnBuild: true`
+  troca o reveal padrão ("casa subindo") por um estouro de partículas
+  (`ASSETS.particleColors[type]` define as cores) ao concluir — usado pela
+  **Ilha** (`island`, canto inferior direito, custo 1 geléia rosa, 5x5 tiles).
 - **Nova receita de forja**: uma entrada em `RECIPES` (`recipes.js`) + ícone em
   `ASSETS.forgeIcons` — a janela de forja, o custo e o equipamento se adaptam sozinhos.
 

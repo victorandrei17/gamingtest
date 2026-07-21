@@ -12,21 +12,23 @@ var LEVEL = {
   // x,y = centro da base (pés) do objeto. Um de cada tipo.
   objects: [
     { type: 'tree',        x: 50,  y: 60  },
-    { type: 'iron_rock',   x: 286, y: 70  },
-    { type: 'bronze_rock', x: 170, y: 50  },
+    { type: 'iron_rock',   x: 300, y: 90  },
+    { type: 'bronze_rock', x: 250, y: 50  },
     { type: 'stone_rock',  x: 50,  y: 220 }
   ],
 
   // Construções: type referencia BUILDINGS (data.js).
-  // x,y = centro da área de construção.
+  // x,y = centro da área de construção. A ilha fica no canto inferior
+  // direito, propositalmente encostada/além da borda do mapa.
   buildings: [
-    { type: 'blacksmith', x: 280, y: 220 }
+    { type: 'blacksmith', x: 170, y: 90  },
+    { type: 'island',     x: 310, y: 240 }
   ],
 
   // Inimigos: type referencia ENEMY_TYPES (data.js). Um de cada tipo.
   // x,y = centro da base (pés) do inimigo.
   enemies: [
-    { type: 'poring', x: 250, y: 150 },
-    { type: 'coelho_branco', x: 100, y: 180 }
+    { type: 'poring', x: 230, y: 180 },
+    { type: 'coelho_branco', x: 90, y: 190 }
   ]
 };

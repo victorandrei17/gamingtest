@@ -69,9 +69,10 @@
     w.spawnDrop = function (itemId, x, y) {
       w.drops.push(new Drop(itemId, x, y));
     };
-    w.spawnParticles = function (x, y, category) {
+    w.spawnParticles = function (x, y, category, count) {
       var colors = ASSETS.particleColors[category] || [ASSETS.palette.white];
-      for (var p = 0; p < 6; p++) {
+      var n = count || 6;
+      for (var p = 0; p < n; p++) {
         w.particles.push(new Particle(x, y, colors[p % colors.length]));
       }
     };

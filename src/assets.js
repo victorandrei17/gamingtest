@@ -488,6 +488,32 @@ var ASSETS = (function () {
     return { built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43 };
   }
 
+  // Círculo preenchido sem antialias (faixas de 1px por linha) — usado pra
+  // formas redondas mantendo o estilo "pixel duro" do resto da arte.
+  function blockyCircle(ctx, cx, cy, r, color) {
+    ctx.fillStyle = color;
+    for (var dy = -r; dy <= r; dy++) {
+      var dx = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
+      if (dx > 0) ctx.fillRect(Math.round(cx - dx), Math.round(cy + dy), dx * 2, 1);
+    }
+  }
+
+  // Ilha nova (5x5 tiles = 80x80): água rasa -> areia -> grama, vista de cima.
+  function createIsland() {
+    var W = 80, H = 80, cx = W / 2, cy = H / 2 + 4;
+    var m = makeCanvas(W, H), c = m.ctx;
+
+    blockyCircle(c, cx, cy, 36, '#6ac0e8');            // água rasa ao redor
+    blockyCircle(c, cx, cy, 30, PAL.bronze);           // areia (borda)
+    blockyCircle(c, cx, cy, 26, PAL.skin);             // areia (centro, mais clara)
+    blockyCircle(c, cx - 1, cy - 3, 17, PAL.leaf);     // grama
+    blockyCircle(c, cx - 6, cy - 9, 7, PAL.leafLight); // brilho da grama
+    px(c, PAL.grayDark, cx + 11, cy + 8, 5, 4);        // pedrinha
+    px(c, PAL.gray, cx + 11, cy + 7, 4, 2);
+
+    return { built: m.canvas, w: W, h: H, anchorX: W / 2, anchorY: H - 6 };
+  }
+
   function drawSiteMarker(ctx, x, y, w, h, time) {
     // Contorno tracejado animado da área de construção.
     ctx.save();
@@ -709,7 +735,8 @@ var ASSETS = (function () {
   // ------------------------------------------------------------------
   var PARTICLE_COLORS = {
     tree: [PAL.leaf, PAL.leafLight, PAL.trunk],
-    rock: [PAL.gray, PAL.grayDark, PAL.white]
+    rock: [PAL.gray, PAL.grayDark, PAL.white],
+    island: [PAL.bronze, PAL.skin, PAL.white, PAL.leafLight, '#6ac0e8']
   };
 
   var api = {
@@ -732,7 +759,7 @@ var ASSETS = (function () {
       api.items = createItems();
       api.weaponIcons = createWeaponIcons();
       api.forgeIcons = createForgeIcons();
-      api.buildings = { blacksmith: createBlacksmith() };
+      api.buildings = { blacksmith: createBlacksmith(), island: createIsland() };
       api.enemies = createEnemySprites();
       if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealStageSprites();
     }

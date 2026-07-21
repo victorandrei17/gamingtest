@@ -24,7 +24,9 @@ Forge.prototype.nearSmith = function () {
   var p = this.world.player, R = CONFIG.SMITH_INTERACT_RADIUS;
   for (var i = 0; i < this.world.buildings.length; i++) {
     var b = this.world.buildings[i];
-    if (b.state !== 'built') continue;
+    // Só o ferreiro abre a forja — sem isso, qualquer construção 'built'
+    // (ex.: a ilha) também dispararia o prompt [E] FORJAR por engano.
+    if (b.type !== 'blacksmith' || b.state !== 'built') continue;
     var dx = b.x - p.x, dy = b.y - p.y;
     if (dx * dx + dy * dy <= R * R) return b;
   }

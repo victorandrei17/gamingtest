@@ -87,6 +87,9 @@ Building.prototype.update = function (dt, player, world) {
     this.timer -= dt;
     if (this.timer <= 0) {
       this.state = 'built';
+      // Construções declaradas com explosionOnBuild "estouram" em vez do
+      // reveal padrão (usado pela ilha em vez da casa "subindo" do ferreiro).
+      if (this.def.explosionOnBuild) world.spawnParticles(this.x, this.y, this.type, 24);
       world.showMessage(this.def.unlockMessage, CONFIG.UNLOCK_MSG_TIME);
     }
   }
