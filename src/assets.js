@@ -94,13 +94,37 @@ var ASSETS = (function () {
 
   // ------------------------------------------------------------------
   // Chão — xadrez de desenvolvimento. Trocar por tileset real aqui.
+  // A faixa a partir de ORIGINAL_MAP_WIDTH nasce como "água" (travada, ver
+  // building.js/main.js "ilha") até ser desbloqueada.
   // ------------------------------------------------------------------
   function createGround() {
     var t = CONFIG.TILE_SIZE;
     var g = makeCanvas(CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
+    var lockedFromTx = CONFIG.ORIGINAL_MAP_WIDTH / t;
     for (var ty = 0; ty < CONFIG.GAME_HEIGHT / t; ty++) {
       for (var tx = 0; tx < CONFIG.GAME_WIDTH / t; tx++) {
-        px(g.ctx, (tx + ty) % 2 === 0 ? PAL.green : PAL.green2, tx * t, ty * t, t, t);
+        var even = (tx + ty) % 2 === 0;
+        var color = tx >= lockedFromTx
+          ? (even ? '#2f6fa8' : '#3a82c4')   // água (travada)
+          : (even ? PAL.green : PAL.green2); // grama (mapa original)
+        px(g.ctx, color, tx * t, ty * t, t, t);
+      }
+    }
+    return g.canvas;
+  }
+
+  // Textura de grama pra sobrepor a água quando a ilha é desbloqueada —
+  // mesmo xadrez do resto do mapa, com a paridade de tile calculada a partir
+  // da posição absoluta pra encaixar sem costura na fronteira.
+  function createGroundExtension() {
+    var t = CONFIG.TILE_SIZE;
+    var w = CONFIG.GAME_WIDTH - CONFIG.ORIGINAL_MAP_WIDTH;
+    var g = makeCanvas(w, CONFIG.GAME_HEIGHT);
+    var startTx = CONFIG.ORIGINAL_MAP_WIDTH / t;
+    for (var ty = 0; ty < CONFIG.GAME_HEIGHT / t; ty++) {
+      for (var localTx = 0; localTx < w / t; localTx++) {
+        var tx = startTx + localTx;
+        px(g.ctx, (tx + ty) % 2 === 0 ? PAL.green : PAL.green2, localTx * t, ty * t, t, t);
       }
     }
     return g.canvas;
@@ -488,32 +512,6 @@ var ASSETS = (function () {
     return { built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43 };
   }
 
-  // Círculo preenchido sem antialias (faixas de 1px por linha) — usado pra
-  // formas redondas mantendo o estilo "pixel duro" do resto da arte.
-  function blockyCircle(ctx, cx, cy, r, color) {
-    ctx.fillStyle = color;
-    for (var dy = -r; dy <= r; dy++) {
-      var dx = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)));
-      if (dx > 0) ctx.fillRect(Math.round(cx - dx), Math.round(cy + dy), dx * 2, 1);
-    }
-  }
-
-  // Ilha nova (5x5 tiles = 80x80): água rasa -> areia -> grama, vista de cima.
-  function createIsland() {
-    var W = 80, H = 80, cx = W / 2, cy = H / 2 + 4;
-    var m = makeCanvas(W, H), c = m.ctx;
-
-    blockyCircle(c, cx, cy, 36, '#6ac0e8');            // água rasa ao redor
-    blockyCircle(c, cx, cy, 30, PAL.bronze);           // areia (borda)
-    blockyCircle(c, cx, cy, 26, PAL.skin);             // areia (centro, mais clara)
-    blockyCircle(c, cx - 1, cy - 3, 17, PAL.leaf);     // grama
-    blockyCircle(c, cx - 6, cy - 9, 7, PAL.leafLight); // brilho da grama
-    px(c, PAL.grayDark, cx + 11, cy + 8, 5, 4);        // pedrinha
-    px(c, PAL.gray, cx + 11, cy + 7, 4, 2);
-
-    return { built: m.canvas, w: W, h: H, anchorX: W / 2, anchorY: H - 6 };
-  }
-
   function drawSiteMarker(ctx, x, y, w, h, time) {
     // Contorno tracejado animado da área de construção.
     ctx.save();
@@ -736,7 +734,7 @@ var ASSETS = (function () {
   var PARTICLE_COLORS = {
     tree: [PAL.leaf, PAL.leafLight, PAL.trunk],
     rock: [PAL.gray, PAL.grayDark, PAL.white],
-    island: [PAL.bronze, PAL.skin, PAL.white, PAL.leafLight, '#6ac0e8']
+    island: [PAL.leaf, PAL.leafLight, PAL.white, '#6ac0e8'] // água clareando + grama surgindo
   };
 
   var api = {
@@ -750,16 +748,17 @@ var ASSETS = (function () {
     strokeRect: strokeRectPx,
     particleColors: PARTICLE_COLORS,
     playerSize: { w: PLAYER_W, h: PLAYER_H },
-    ground: null, players: null, resources: null,
+    ground: null, groundExtension: null, players: null, resources: null,
     items: null, weaponIcons: null, forgeIcons: null, buildings: null, enemies: null,
     init: function () {
       api.ground = createGround();
+      api.groundExtension = createGroundExtension();
       api.players = { boy: createPlayerSet(PAL.blue), girl: createPlayerSet(PAL.pink) };
       api.resources = createResources();
       api.items = createItems();
       api.weaponIcons = createWeaponIcons();
       api.forgeIcons = createForgeIcons();
-      api.buildings = { blacksmith: createBlacksmith(), island: createIsland() };
+      api.buildings = { blacksmith: createBlacksmith() };
       api.enemies = createEnemySprites();
       if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealStageSprites();
     }

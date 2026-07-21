@@ -32,8 +32,10 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | Constante | Padrão | Efeito |
 |---|---|---|
 | `DEBUG` | `true` | Overlays de desenvolvimento (grade numerada, hitboxes, raio de coleta, coordenadas do jogador, timers de respawn); com `true`, mostra um botão **DEBUG** no canto superior direito da tela pra ligar/desligar o overlay em runtime sem editar este arquivo |
-| `GAME_WIDTH` / `GAME_HEIGHT` | 336 / 270 | Resolução interna |
-| `SCALE` | 4 | Escala inteira de exibição (1920×1080) |
+| `GAME_WIDTH` / `GAME_HEIGHT` | 496 / 270 | Resolução interna — `ORIGINAL_MAP_WIDTH` (336) + a faixa de água da ilha |
+| `ORIGINAL_MAP_WIDTH` | 336 | Borda direita do mapa original; além dela é a faixa travada da "ilha" |
+| `ISLAND_WATER_TILES` | 10 | Tiles de água acrescentados à direita (destravados ao criar a "ilha") |
+| `SCALE` | 4 | Escala inteira de exibição (1984×1080) |
 | `TILE_SIZE` | 16 | Grid base em px |
 | `PLAYER_SPEED` | 90 | Velocidade do jogador (px/s) |
 | `PLAYER_HITBOX_W` / `_H` | 10 / 6 | Hitbox de colisão pelos pés |
@@ -103,10 +105,26 @@ Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no co
   abre a janela de forja (`Forge.nearSmith` filtra por `type: 'blacksmith'`) —
   outras construções não interferem nesse fluxo. `explosionOnBuild: true`
   troca o reveal padrão ("casa subindo") por um estouro de partículas
-  (`ASSETS.particleColors[type]` define as cores) ao concluir — usado pela
-  **Ilha** (`island`, canto inferior direito, custo 1 geléia rosa, 5x5 tiles).
+  (`ASSETS.particleColors[type]` define as cores) ao concluir.
 - **Nova receita de forja**: uma entrada em `RECIPES` (`recipes.js`) + ícone em
   `ASSETS.forgeIcons` — a janela de forja, o custo e o equipamento se adaptam sozinhos.
+
+### Expansão de mapa ("ilha")
+
+A faixa de `CONFIG.ORIGINAL_MAP_WIDTH` (336) até `CONFIG.GAME_WIDTH` (496) nasce
+como água travada — um sólido em `main.js` (`rebuildSolids`, tag `owner: null`)
+bloqueia toda essa faixa enquanto a construção `island` (`BUILDINGS.island`,
+`data.js`) não está `'built'`. `island` usa `terrainUnlock: true`: não é uma
+estrutura física, então `Building.solidBox`/`draw` (`building.js`) não geram
+sólido nem sprite próprios para ela — só a área de entrega (dashed marker +
+ícone + contador, igual ao ferreiro) aparece bem na fronteira, alcançável do
+lado de dentro. Ao entregar o item (`cost: { geleia_rosa: 1 }`), a construção
+completa (`explosionOnBuild: true`, partículas via `ASSETS.particleColors.island`),
+o sólido some e `main.js` sobrepõe `ASSETS.groundExtension` (o mesmo xadrez de
+grama, com a paridade de tile calculada a partir da posição absoluta pra
+encaixar sem costura) por cima da água — o mapa cresce de verdade, sem sprite
+de "ilha" nenhum. Uma nova expansão seguiria o mesmo padrão: outro trecho de
+`CONFIG.GAME_WIDTH`, outra entrada em `BUILDINGS` com `terrainUnlock`.
 
 ### Atributos e forja (Milestone 2)
 

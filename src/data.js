@@ -69,14 +69,20 @@ var BUILDINGS = {
     width: 56,   // px do sprite construído (bigorna + fornalha)
     height: 44
   },
+  // "Ilha": não é uma estrutura física — é o gatilho que desbloqueia a faixa
+  // de água a leste do mapa (ver CONFIG.ISLAND_WATER_TILES), transformando-a
+  // em terreno igual ao resto do xadrez. terrainUnlock:true faz building.js
+  // pular o sprite/solidBox próprios (a "revelação" é a troca do chão em
+  // main.js); explosionOnBuild:true estoura partículas ao concluir.
   island: {
-    name: 'Ilha',
+    name: 'Nova Área',
     unlockMessage: 'NOVA ILHA CRIADA',
     cost: { geleia_rosa: 1 },
-    buildTime: 0.2,        // quase instantâneo — o efeito é a explosão, não uma obra longa
-    width: 80,             // 5x5 tiles (TILE_SIZE 16 * 5)
-    height: 80,
-    explosionOnBuild: true // building.js estoura partículas ao concluir, em vez do "sobe" padrão
+    buildTime: 0.2,       // quase instantâneo — o efeito é a explosão, não uma obra longa
+    width: 40,             // tamanho da área de entrega (encostar na parede), não um sprite
+    height: 200,
+    terrainUnlock: true,
+    explosionOnBuild: true
   }
 };
 

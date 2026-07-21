@@ -52,7 +52,9 @@
     }
     for (i = 0; i < LEVEL.buildings.length; i++) {
       var b = LEVEL.buildings[i];
-      w.buildings.push(new Building(b.type, b.x, b.y));
+      var built = new Building(b.type, b.x, b.y);
+      w.buildings.push(built);
+      if (b.type === 'island') w.islandBuilding = built; // referência rápida p/ a parede d'água
     }
     if (LEVEL.enemies) {
       for (i = 0; i < LEVEL.enemies.length; i++) {
@@ -103,6 +105,16 @@
           w.solids.push(sb);
         }
       }
+      // Parede d'água: bloqueia a faixa da ilha até ela ser desbloqueada
+      // (a área de entrega, um pouco menor, fica alcançável do lado de cá —
+      // ver Building.areaBox/BUILDINGS.island).
+      if (w.islandBuilding && w.islandBuilding.state !== 'built') {
+        w.solids.push({
+          x: CONFIG.ORIGINAL_MAP_WIDTH, y: 0,
+          w: CONFIG.GAME_WIDTH - CONFIG.ORIGINAL_MAP_WIDTH, h: CONFIG.GAME_HEIGHT,
+          owner: null
+        });
+      }
     };
     return w;
   }
@@ -138,6 +150,10 @@
 
   function drawWorld() {
     ctx.drawImage(ASSETS.ground, 0, 0);
+    // Ilha desbloqueada: a faixa d'água vira grama, mesmo xadrez do resto do mapa.
+    if (world.islandBuilding && world.islandBuilding.state === 'built') {
+      ctx.drawImage(ASSETS.groundExtension, CONFIG.ORIGINAL_MAP_WIDTH, 0);
+    }
 
     var i;
     for (i = 0; i < world.drops.length; i++) world.drops[i].draw(ctx);

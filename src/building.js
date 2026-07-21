@@ -21,8 +21,10 @@ Building.prototype.areaBox = function () {
 };
 
 // Colisão sólida apenas depois de construída (pelos "pés" da casa).
+// terrainUnlock (ex.: ilha) não tem estrutura própria — quem bloqueia é a
+// parede d'água em main.js, então aqui é sempre null.
 Building.prototype.solidBox = function () {
-  if (this.state !== 'built') return null;
+  if (this.def.terrainUnlock || this.state !== 'built') return null;
   var w = this.def.width;
   return { x: this.x - w / 2, y: this.y, w: w, h: this.def.height / 2 };
 };
@@ -110,7 +112,7 @@ Building.prototype.draw = function (ctx, time) {
     var cx = Math.round(this.x - (icon.width + 2 + tw) / 2);
     ctx.drawImage(icon, cx, Math.round(this.y - 4));
     ASSETS.drawText(ctx, label, cx + icon.width + 2, Math.round(this.y - 3), ASSETS.palette.white, 1);
-  } else {
+  } else if (!this.def.terrainUnlock) {
     // Casa subindo durante a obra; completa quando 'built'.
     var t = this.state === 'built' ? 1 : 1 - this.timer / this.def.buildTime;
     var sh = Math.max(1, Math.round(sprite.h * t));
@@ -128,6 +130,8 @@ Building.prototype.draw = function (ctx, time) {
       ctx.fillRect(bx, by, Math.round(w * t), 3);
     }
   }
+  // terrainUnlock 'building'/'built': nada aqui — a revelação é a troca do
+  // chão em main.js (drawWorld), não um sprite desta construção.
 
   // Itens voando do jogador até a área
   for (var i = 0; i < this.flying.length; i++) {

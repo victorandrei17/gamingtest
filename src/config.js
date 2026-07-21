@@ -10,9 +10,11 @@ var CONFIG = {
   USE_REAL_ROCK_SPRITES: false,
 
   // Resolução interna e escala
-  GAME_WIDTH: 336,    // -30% vs. o original (480)
+  ORIGINAL_MAP_WIDTH: 336,  // borda direita do mapa original (-30% vs. 480)
+  ISLAND_WATER_TILES: 10,   // tiles de "água" acrescentados à direita, travados até desbloquear a ilha
+  GAME_WIDTH: 336 + 10 * 16, // ORIGINAL_MAP_WIDTH + ISLAND_WATER_TILES*TILE_SIZE = 496
   GAME_HEIGHT: 270,
-  SCALE: 4,          // 336x270 * 4 = 1344x1080
+  SCALE: 4,          // 496x270 * 4 = 1984x1080
   TILE_SIZE: 16,
 
   // Jogador
