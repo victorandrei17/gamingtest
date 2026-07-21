@@ -16,6 +16,15 @@ var HUD = (function () {
   function pointInRect(p, r) {
     return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
   }
+  // Itens com quantidade > 0 — itens zerados (ex.: drops de inimigo antes do
+  // primeiro kill) não ocupam slot nem contam "0" na faixa/inventário.
+  function ownedItems(world) {
+    var out = [];
+    for (var i = 0; i < INVENTORY_ORDER.length; i++) {
+      if ((world.inventory[INVENTORY_ORDER[i]] || 0) > 0) out.push(INVENTORY_ORDER[i]);
+    }
+    return out;
+  }
 
   // ------- API chamada por outros módulos -------
   function notifyPulse(itemId) {
@@ -60,8 +69,9 @@ var HUD = (function () {
 
   // Faixa mínima de recursos + dicas de tecla.
   function drawResourceStrip(ctx, world) {
-    for (var i = 0; i < INVENTORY_ORDER.length; i++) {
-      var item = INVENTORY_ORDER[i], x = stripSlotX(i), y = STRIP_Y;
+    var items = ownedItems(world);
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i], x = stripSlotX(i), y = STRIP_Y;
       var p = pulse[item] > 0 ? pulse[item] / CONFIG.HUD_PULSE_TIME : 0;
       ctx.fillStyle = 'rgba(26,28,44,0.6)';
       ctx.fillRect(x, y, SLOT_W - 2, 12);
@@ -71,7 +81,8 @@ var HUD = (function () {
         p > 0 ? PAL.white : PAL.iron, scale);
     }
     for (var f = 0; f < floaters.length; f++) {
-      var fl = floaters[f], idx = INVENTORY_ORDER.indexOf(fl.item);
+      var fl = floaters[f], idx = items.indexOf(fl.item);
+      if (idx < 0) continue; // item foi todo consumido no mesmo instante (ex.: forja)
       var prog = 1 - fl.t / CONFIG.FLOAT_TEXT_TIME;
       ctx.save();
       ctx.globalAlpha = Math.max(0, 1 - prog);
@@ -237,9 +248,10 @@ var HUD = (function () {
     ASSETS.drawText(ctx, title, g.header.x + Math.round((g.header.w - ASSETS.textWidth(title, 1)) / 2),
       g.header.y + 4, '#f2e2c0', 1);
 
-    // Células.
-    for (var i = 0; i < INVENTORY_ORDER.length && i < g.cells.length; i++) {
-      var item = INVENTORY_ORDER[i], cr = g.cells[i];
+    // Células — só itens com quantidade > 0 (nada de slot "0" ocupando espaço).
+    var items = ownedItems(world);
+    for (var i = 0; i < items.length && i < g.cells.length; i++) {
+      var item = items[i], cr = g.cells[i];
       ctx.drawImage(ASSETS.items[item], cr.x + (cell - 8) / 2, cr.y + 2);
       var count = String(world.inventory[item] || 0);
       ASSETS.drawText(ctx, count, cr.x + cell - ASSETS.textWidth(count, 1) - 1, cr.y + cell - 6, PAL.white, 1);
