@@ -91,7 +91,11 @@ var BUILDINGS = {
     width: 80,        // 5x5 tiles (TILE_SIZE 16 * 5)
     height: 80,
     terrainUnlock: true,
-    explosionOnBuild: true
+    explosionOnBuild: true,
+    // Mesmo gate do Ferreiro (ver revealQuest acima): área de entrega só
+    // aparece depois que o jogador já tem os itens em mãos (a quest que
+    // pede pra caçá-los), pra não expor o objetivo final antes da hora.
+    revealQuest: 'hunt_rare_drops'
   }
 };
 
