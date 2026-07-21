@@ -20,12 +20,14 @@ var LEVEL = {
   ],
 
   // Construções: type referencia BUILDINGS (data.js).
-  // x,y = centro da área de construção. A "ilha" fica bem na fronteira do
-  // mapa original (x = ORIGINAL_MAP_WIDTH) — é aí que se encosta na parede
-  // d'água pra entregar a geléia rosa.
+  // x,y = centro da área de construção. A "ilha" é um recorte de 80x80 (5x5
+  // tiles, ver BUILDINGS.island) dentro da faixa de água, encostado na
+  // fronteira verde/azul (borda esquerda = ORIGINAL_MAP_WIDTH) e alinhado à
+  // parte inferior do mapa nas linhas de tile 11-16 (176px a 256px — o
+  // resto, até 270px, é a última fileira parcial de água, sempre bloqueada).
   buildings: [
     { type: 'blacksmith', x: 170, y: 90  },
-    { type: 'island',     x: CONFIG.ORIGINAL_MAP_WIDTH, y: 135 }
+    { type: 'island',     x: CONFIG.ORIGINAL_MAP_WIDTH + 40, y: 216 }
   ],
 
   // Inimigos: type referencia ENEMY_TYPES (data.js). Um de cada tipo.

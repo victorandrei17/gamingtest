@@ -113,18 +113,20 @@ var ASSETS = (function () {
     return g.canvas;
   }
 
-  // Textura de grama pra sobrepor a água quando a ilha é desbloqueada —
-  // mesmo xadrez do resto do mapa, com a paridade de tile calculada a partir
-  // da posição absoluta pra encaixar sem costura na fronteira.
+  // Textura de grama pra sobrepor só o recorte 5x5 da ilha (BUILDINGS.island)
+  // quando ela é desbloqueada — mesmo xadrez do resto do mapa, com a
+  // paridade de tile calculada a partir da posição absoluta (coluna 21,
+  // linha 11 — ver LEVEL.buildings) pra encaixar sem costura na fronteira.
   function createGroundExtension() {
     var t = CONFIG.TILE_SIZE;
-    var w = CONFIG.GAME_WIDTH - CONFIG.ORIGINAL_MAP_WIDTH;
-    var g = makeCanvas(w, CONFIG.GAME_HEIGHT);
-    var startTx = CONFIG.ORIGINAL_MAP_WIDTH / t;
-    for (var ty = 0; ty < CONFIG.GAME_HEIGHT / t; ty++) {
-      for (var localTx = 0; localTx < w / t; localTx++) {
-        var tx = startTx + localTx;
-        px(g.ctx, (tx + ty) % 2 === 0 ? PAL.green : PAL.green2, localTx * t, ty * t, t, t);
+    var w = BUILDINGS.island.width, h = BUILDINGS.island.height;
+    var g = makeCanvas(w, h);
+    var startTx = CONFIG.ORIGINAL_MAP_WIDTH / t; // 21
+    var startTy = 11;                            // linha onde a ilha fica (ver level.js)
+    for (var ty = 0; ty < h / t; ty++) {
+      for (var tx = 0; tx < w / t; tx++) {
+        var atx = startTx + tx, aty = startTy + ty;
+        px(g.ctx, (atx + aty) % 2 === 0 ? PAL.green : PAL.green2, tx * t, ty * t, t, t);
       }
     }
     return g.canvas;

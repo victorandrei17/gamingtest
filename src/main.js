@@ -105,15 +105,20 @@
           w.solids.push(sb);
         }
       }
-      // Parede d'água: bloqueia a faixa da ilha até ela ser desbloqueada
-      // (a área de entrega, um pouco menor, fica alcançável do lado de cá —
-      // ver Building.areaBox/BUILDINGS.island).
-      if (w.islandBuilding && w.islandBuilding.state !== 'built') {
-        w.solids.push({
-          x: CONFIG.ORIGINAL_MAP_WIDTH, y: 0,
-          w: CONFIG.GAME_WIDTH - CONFIG.ORIGINAL_MAP_WIDTH, h: CONFIG.GAME_HEIGHT,
-          owner: null
-        });
+      // Água: só o retângulo 5x5 da ilha (BUILDINGS.island.width/height) é
+      // desbloqueável — o resto da faixa continua bloqueado pra sempre, três
+      // sólidos permanentes "cercando" esse retângulo (acima, à direita,
+      // abaixo). O retângulo da ilha em si só é sólido enquanto não construída.
+      if (w.islandBuilding) {
+        var ib = w.islandBuilding, idef = ib.def;
+        var ix = ib.x - idef.width / 2, iy = ib.y - idef.height / 2;
+        var waterX = CONFIG.ORIGINAL_MAP_WIDTH, waterW = CONFIG.GAME_WIDTH - CONFIG.ORIGINAL_MAP_WIDTH;
+        w.solids.push({ x: waterX, y: 0, w: waterW, h: iy, owner: null }); // acima
+        w.solids.push({ x: ix + idef.width, y: iy, w: CONFIG.GAME_WIDTH - (ix + idef.width), h: idef.height, owner: null }); // à direita
+        w.solids.push({ x: waterX, y: iy + idef.height, w: waterW, h: CONFIG.GAME_HEIGHT - (iy + idef.height), owner: null }); // abaixo
+        if (ib.state !== 'built') {
+          w.solids.push({ x: ix, y: iy, w: idef.width, h: idef.height, owner: null }); // a própria ilha, antes de desbloquear
+        }
       }
     };
     return w;
@@ -150,9 +155,11 @@
 
   function drawWorld() {
     ctx.drawImage(ASSETS.ground, 0, 0);
-    // Ilha desbloqueada: a faixa d'água vira grama, mesmo xadrez do resto do mapa.
+    // Ilha desbloqueada: só o recorte 5x5 dela vira grama, mesmo xadrez do
+    // resto do mapa — o resto da faixa d'água continua água.
     if (world.islandBuilding && world.islandBuilding.state === 'built') {
-      ctx.drawImage(ASSETS.groundExtension, CONFIG.ORIGINAL_MAP_WIDTH, 0);
+      var ib = world.islandBuilding, idef = ib.def;
+      ctx.drawImage(ASSETS.groundExtension, ib.x - idef.width / 2, ib.y - idef.height / 2);
     }
 
     var i;

@@ -112,19 +112,23 @@ Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no co
 ### Expansão de mapa ("ilha")
 
 A faixa de `CONFIG.ORIGINAL_MAP_WIDTH` (336) até `CONFIG.GAME_WIDTH` (496) nasce
-como água travada — um sólido em `main.js` (`rebuildSolids`, tag `owner: null`)
-bloqueia toda essa faixa enquanto a construção `island` (`BUILDINGS.island`,
-`data.js`) não está `'built'`. `island` usa `terrainUnlock: true`: não é uma
-estrutura física, então `Building.solidBox`/`draw` (`building.js`) não geram
-sólido nem sprite próprios para ela — só a área de entrega (dashed marker +
-ícone + contador, igual ao ferreiro) aparece bem na fronteira, alcançável do
-lado de dentro. Ao entregar o item (`cost: { geleia_rosa: 1 }`), a construção
-completa (`explosionOnBuild: true`, partículas via `ASSETS.particleColors.island`),
-o sólido some e `main.js` sobrepõe `ASSETS.groundExtension` (o mesmo xadrez de
-grama, com a paridade de tile calculada a partir da posição absoluta pra
-encaixar sem costura) por cima da água — o mapa cresce de verdade, sem sprite
-de "ilha" nenhum. Uma nova expansão seguiria o mesmo padrão: outro trecho de
-`CONFIG.GAME_WIDTH`, outra entrada em `BUILDINGS` com `terrainUnlock`.
+como água — mas só um recorte de 5x5 tiles dela (`BUILDINGS.island.width/height`,
+`data.js`) é desbloqueável; o resto da faixa é água permanente, bloqueada pra
+sempre. `main.js` (`rebuildSolids`) cerca esse retângulo com três sólidos fixos
+(acima, à direita, abaixo — nunca somem) e um quarto sólido, do tamanho exato
+do retângulo, que existe só enquanto a construção `island` não está `'built'`.
+`island` usa `terrainUnlock: true`: não é uma estrutura física, então
+`Building.solidBox`/`draw` (`building.js`) não geram sólido nem sprite próprios
+para ela — só a área de entrega (dashed marker + ícone + contador, igual ao
+ferreiro) aparece encostada na fronteira verde/água, alcançável do lado de
+dentro. Ao entregar o item (`cost: { geleia_rosa: 1 }`), a construção completa
+(`explosionOnBuild: true`, partículas via `ASSETS.particleColors.island`), o
+quarto sólido some e `main.js` sobrepõe `ASSETS.groundExtension` — só sobre o
+retângulo 5x5, não a faixa inteira — com o mesmo xadrez de grama do resto do
+mapa (paridade de tile calculada a partir da posição absoluta pra encaixar sem
+costura). O mapa cresce de verdade, só naquele pedaço; o resto do mar continua
+água pra sempre. Uma nova expansão seguiria o mesmo padrão: outro recorte,
+outra entrada em `BUILDINGS` com `terrainUnlock`.
 
 ### Atributos e forja (Milestone 2)
 
