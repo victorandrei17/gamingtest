@@ -37,7 +37,7 @@ Enemy.prototype.sprite = function () {
 
 Enemy.prototype.hurtbox = function () {
   var s = this.sprite();
-  return { x: this.x - s.w / 2, y: this.y - s.h + 4, w: s.w, h: s.h - 4 };
+  return { x: this.x - s.w / 2, y: this.y - s.h + 9, w: s.w, h: s.h - 4 };
 };
 
 Enemy.prototype.solidBox = function () {
