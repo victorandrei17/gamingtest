@@ -517,12 +517,15 @@ var ASSETS = (function () {
     px(ctx, '#4a2727', x + 1, y + s - 2, s - 2, 1); // sombra inferior
   }
 
-  // Grade de inventário com moldura de madeira (estilo da referência).
-  // Desenha a moldura + todas as células e devolve os retângulos das células
-  // para o HUD posicionar ícones/contadores. Nova coluna/linha = só mudar args.
-  function drawInventoryGrid(ctx, x, y, cols, rows, cell, gap, frame) {
+  // Painel de inventário: uma única moldura de madeira (marrom claro), com
+  // faixa de cabeçalho (título) e rodapé (gold) dentro da própria madeira.
+  // Devolve os retângulos das células e das faixas para o HUD escrever.
+  // headerH/footerH em px (0 = sem faixa). Nova coluna/linha = só mudar args.
+  function drawInventoryGrid(ctx, x, y, cols, rows, cell, gap, frame, headerH, footerH) {
+    headerH = headerH || 0; footerH = footerH || 0;
     var innerW = cols * cell + (cols + 1) * gap;
-    var innerH = rows * cell + (rows + 1) * gap;
+    var gridH = rows * cell + (rows + 1) * gap;
+    var innerH = headerH + gridH + footerH;
     var w = innerW + frame * 2, h = innerH + frame * 2;
 
     px(ctx, '#2e1c12', x + 3, y + 4, w, h);      // sombra projetada
@@ -534,26 +537,33 @@ var ASSETS = (function () {
     px(ctx, '#8a5228', x + w - 2, y + 1, 1, h - 2); // sombra direita
 
     var ix = x + frame, iy = y + frame;
-    px(ctx, '#8a5228', ix, iy, innerW, innerH);  // madeira entre as células
+    px(ctx, '#8a5228', ix, iy, innerW, innerH);  // madeira interna
     strokeRectPx(ctx, ix, iy, innerW, innerH, '#5c3520');
+    var gridTop = iy + headerH;
+    // linhas separando cabeçalho/rodapé da grade
+    if (headerH) px(ctx, '#5c3520', ix, gridTop - 1, innerW, 1);
+    if (footerH) px(ctx, '#5c3520', ix, gridTop + gridH, innerW, 1);
 
     var cells = [];
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
         var cx = ix + gap + c * (cell + gap);
-        var cy = iy + gap + r * (cell + gap);
+        var cy = gridTop + gap + r * (cell + gap);
         drawInvCell(ctx, cx, cy, cell);
         cells.push({ x: cx, y: cy, size: cell });
       }
     }
-    // Studs dourados nas interseções dos divisores de madeira.
     for (var rr = 0; rr <= rows; rr++) {
       for (var cc = 0; cc <= cols; cc++) {
         px(ctx, '#e0a85a', ix + cc * (cell + gap) + Math.floor(gap / 2),
-           iy + rr * (cell + gap) + Math.floor(gap / 2), 1, 1);
+           gridTop + rr * (cell + gap) + Math.floor(gap / 2), 1, 1);
       }
     }
-    return cells;
+    return {
+      cells: cells, x: x, y: y, w: w, h: h,
+      header: { x: ix, y: iy, w: innerW, h: headerH },
+      footer: { x: ix, y: gridTop + gridH, w: innerW, h: footerH }
+    };
   }
 
   // ------------------------------------------------------------------

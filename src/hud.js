@@ -96,44 +96,57 @@ var HUD = (function () {
   }
 
   // ------------------ painel de EQUIPAMENTO + STATUS ------------------
+  // Slots das laterais (peito/anel, removíveis) + linha inferior com 4 slots
+  // permanentes (espada, machado, picareta, bota).
   function buildEquipLayout(world, x, y, ew) {
     var eq = world.equipment, p = world.player;
-    var dollX = x + Math.round((ew - 32) / 2), dollTop = y + 30;
-    var S = 22;
-    // Resolve ícone/nome/mods de cada slot.
-    function slot(key, rect) {
-      var meta = EQUIP_SLOTS[key];
-      var equippedId = eq.slots[key];
-      var icon = null, dim = false, name = meta.label, mods = [];
-      if (equippedId) {
-        var rec = RECIPE_BY_ID[equippedId];
-        icon = ASSETS.forgeIcons[rec.icon]; name = rec.name; mods = rec.modifiers;
-      } else if (key === 'weapon' && p.weapon) {
-        icon = ASSETS.weaponIcons[p.weapon]; name = WEAPON_TYPES[p.weapon].name; // arma-base (ferramenta)
-      } else {
-        // silhueta esmaecida do tipo de item
-        icon = key === 'boot' ? ASSETS.forgeIcons.boot
-             : key === 'chest' ? ASSETS.forgeIcons.chest
-             : key === 'ring' ? ASSETS.forgeIcons.ring
-             : (p.weapon ? ASSETS.weaponIcons[p.weapon] : ASSETS.weaponIcons.axe);
-        dim = true;
+    var dollX = x + Math.round((ew - 32) / 2), dollTop = y + 28, dollCX = dollX + 16;
+    var Ss = 20, Sr = 18; // tamanho dos slots laterais / da linha
+
+    // Slot removível (peito/anel) a partir de EQUIP_SLOTS.
+    function removableSlot(key, rect) {
+      var meta = EQUIP_SLOTS[key], id = eq.slots[key];
+      if (id) {
+        var rec = RECIPE_BY_ID[id];
+        return { key: key, rect: rect, icon: ASSETS.forgeIcons[rec.icon], dim: false,
+                 name: rec.name, mods: rec.modifiers, filled: true, removable: true, note: null };
       }
-      return { key: key, label: meta.label, removable: meta.removable, rect: rect,
-               icon: icon, dim: dim, name: name, mods: mods, filled: !dim };
+      return { key: key, rect: rect, icon: ASSETS.forgeIcons[key], dim: true,
+               name: meta.label, mods: [], filled: false, removable: true, note: '(vazio)' };
     }
+    // Slot de arma forjada (espada): permanente, upgrade.
+    function forgedSlot(slotKey, iconKey, label, rect) {
+      var on = eq.slots[slotKey] === iconKey || (slotKey === 'weapon' && eq.slots.weapon === 'sword');
+      var rec = RECIPE_BY_ID[eq.slots[slotKey]];
+      return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: !on,
+               name: label, mods: on && rec ? rec.modifiers : [], filled: on, removable: false,
+               note: on ? null : '(nao forjada)' };
+    }
+    // Slot de ferramenta base (machado/picareta): sempre presente.
+    function toolSlot(weaponKey, rect) {
+      return { key: null, rect: rect, icon: ASSETS.weaponIcons[weaponKey], dim: false,
+               name: WEAPON_TYPES[weaponKey].name, mods: [], filled: true, removable: false, note: '(ferramenta)' };
+    }
+
+    var rowY = dollTop + 50;
+    var total = 4 * Sr + 3 * 3, sx = Math.round(dollCX - total / 2);
+    function rowRect(i) { return { x: sx + i * (Sr + 3), y: rowY, w: Sr, h: Sr }; }
+
     return {
-      dollX: dollX, dollTop: dollTop,
+      dollX: dollX, dollTop: dollTop, dollCX: dollCX,
       slots: [
-        slot('chest', { x: dollX - 36, y: dollTop + 6, w: S, h: S }),   // esquerda (removível)
-        slot('ring',  { x: dollX + 46, y: dollTop + 6, w: S, h: S }),   // direita (removível)
-        slot('weapon', { x: dollX - 8, y: dollTop + 50, w: S, h: S }),  // linha abaixo (permanente)
-        slot('boot',   { x: dollX + 18, y: dollTop + 50, w: S, h: S })
+        removableSlot('chest', { x: dollX - 30, y: dollTop + 8, w: Ss, h: Ss }),
+        removableSlot('ring',  { x: dollX + 42, y: dollTop + 8, w: Ss, h: Ss }),
+        forgedSlot('weapon', 'sword', 'Espada', rowRect(0)),
+        toolSlot('axe', rowRect(1)),
+        toolSlot('pickaxe', rowRect(2)),
+        forgedSlot('boot', 'boot', 'Bota', rowRect(3))
       ]
     };
   }
 
   function drawEquipmentPanel(ctx, world) {
-    var ew = 200, sw = 118, eh = 150;
+    var ew = 124, sw = 68, eh = 150; // ~40% mais estreito que antes
     var x = Math.round((CONFIG.GAME_WIDTH - (ew + sw)) / 2);
     var y = Math.round((CONFIG.GAME_HEIGHT - eh) / 2);
     ASSETS.drawPanel(ctx, x, y, ew, eh);
@@ -141,10 +154,9 @@ var HUD = (function () {
     ASSETS.drawText(ctx, title, x + Math.round((ew - ASSETS.textWidth(title, 1)) / 2), y + 8, PAL.bronze, 1);
 
     var lay = buildEquipLayout(world, x, y, ew);
-    var dollCX = lay.dollX + 16, dollCY = lay.dollTop + 22;
+    var dollCX = lay.dollCX, dollCY = lay.dollTop + 22;
     var frame = ASSETS.players[world.player.character].down.idle[0];
     ctx.drawImage(frame, lay.dollX, lay.dollTop, 32, 44);
-    // itens equipados aparecem no boneco
     if (world.equipment.slots.weapon) ctx.drawImage(ASSETS.forgeIcons.sword, lay.dollX + 22, lay.dollTop + 16);
     if (world.equipment.slots.boot)   ctx.drawImage(ASSETS.forgeIcons.boot, lay.dollX + 8, lay.dollTop + 32);
     if (world.equipment.slots.chest)  ctx.drawImage(ASSETS.forgeIcons.chest, lay.dollX + 10, lay.dollTop + 16);
@@ -152,11 +164,10 @@ var HUD = (function () {
     var hovered = null;
     for (var i = 0; i < lay.slots.length; i++) {
       var s = lay.slots[i], r = s.rect;
-      // linha ligando o slot ao boneco
-      ctx.strokeStyle = 'rgba(139,155,180,0.4)';
+      ctx.strokeStyle = 'rgba(139,155,180,0.35)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(r.x + r.w / 2 + 0.5, s.rect.y < dollCY ? r.y + r.h + 0.5 : r.y + 0.5);
+      ctx.moveTo(r.x + r.w / 2 + 0.5, r.y < dollCY ? r.y + r.h + 0.5 : r.y + 0.5);
       ctx.lineTo(dollCX + 0.5, dollCY + 0.5);
       ctx.stroke();
 
@@ -164,13 +175,10 @@ var HUD = (function () {
       if (s.removable) ASSETS.strokeRect(ctx, r.x, r.y, r.w, r.h, s.filled ? PAL.bronze : 'rgba(232,160,60,0.5)');
       if (s.icon) {
         ctx.save();
-        if (s.dim) ctx.globalAlpha = 0.35;
+        if (s.dim) ctx.globalAlpha = 0.32;
         ctx.drawImage(s.icon, r.x + (r.w - s.icon.width) / 2, r.y + (r.h - s.icon.height) / 2);
         ctx.restore();
       }
-      ASSETS.drawText(ctx, s.label, r.x + Math.round((r.w - ASSETS.textWidth(s.label, 1)) / 2), r.y + r.h + 1,
-        s.filled ? PAL.white : PAL.grayDark, 1);
-
       if (pointInRect(INPUT.mouse, r)) {
         hovered = s;
         if (INPUT.wasClicked() && s.removable) world.equipment.toggleSlot(s.key);
@@ -178,25 +186,25 @@ var HUD = (function () {
     }
 
     drawStatusWindow(ctx, x + ew, y, sw, eh, world, hovered);
-    var hint = '[C] FECHAR';
-    ASSETS.drawText(ctx, hint, x + ew - ASSETS.textWidth(hint, 1) - 8, y + eh - 10, PAL.gray, 1);
+    var hint = '[C]';
+    ASSETS.drawText(ctx, hint, x + ew - ASSETS.textWidth(hint, 1) - 6, y + eh - 10, PAL.gray, 1);
     if (hovered) drawTooltip(ctx, hovered);
   }
 
-  // Janela de STATUS colada à direita do equipamento (compacta).
+  // Janela de STATUS colada à direita (estreita): rótulo em cima, valor embaixo.
   function drawStatusWindow(ctx, x, y, w, h, world, hovered) {
     ASSETS.drawPanel(ctx, x, y, w, h);
     var title = 'STATUS';
     ASSETS.drawText(ctx, title, x + Math.round((w - ASSETS.textWidth(title, 1)) / 2), y + 8, PAL.bronze, 1);
     var rows = ['damage', 'moveSpeed', 'attackSpeed'];
     for (var i = 0; i < rows.length; i++) {
-      var stat = rows[i], ry = y + 28 + i * 14;
+      var stat = rows[i], ry = y + 26 + i * 26;
       var affected = hovered && slotAffects(hovered, stat);
       var flash = statFlash[stat] && statFlash[stat].t > 0;
-      ASSETS.drawText(ctx, STAT_LABELS[stat].toUpperCase(), x + 10, ry, affected ? PAL.bronze : PAL.gray, 1);
+      ASSETS.drawText(ctx, STAT_LABELS[stat].toUpperCase(), x + 6, ry, affected ? PAL.bronze : PAL.gray, 1);
       var txt = flash ? statFlash[stat].from + ' > ' + statFlash[stat].to : world.stats.statusText(stat);
       var col = flash ? '#f6c070' : (affected ? PAL.white : PAL.iron);
-      ASSETS.drawText(ctx, txt, x + w - ASSETS.textWidth(txt, 1) - 8, ry + 7, col, 1);
+      ASSETS.drawText(ctx, txt, x + w - ASSETS.textWidth(txt, 1) - 6, ry + 10, col, 1);
     }
   }
 
@@ -205,39 +213,40 @@ var HUD = (function () {
     return false;
   }
 
-  // -------------------- painel de INVENTÁRIO + gold --------------------
+  // -------------------- INVENTÁRIO (só madeira) + gold --------------------
+  // Uma única moldura de madeira: faixa superior com o título e faixa inferior
+  // com o total de gold; sem box escura em volta.
   function drawInventoryPanel(ctx, world) {
-    var pw = 224, ph = 156;
-    var x = Math.round((CONFIG.GAME_WIDTH - pw) / 2);
-    var y = Math.round((CONFIG.GAME_HEIGHT - ph) / 2);
-    ASSETS.drawPanel(ctx, x, y, pw, ph);
-    var title = 'INVENTARIO';
-    ASSETS.drawText(ctx, title, x + Math.round((pw - ASSETS.textWidth(title, 1)) / 2), y + 8, PAL.bronze, 1);
+    var cols = 8, rows = 4, cell = 16, gap = 3, frame = 6, headerH = 13, footerH = 13;
+    var w = cols * cell + (cols + 1) * gap + frame * 2;
+    var h = (headerH + rows * cell + (rows + 1) * gap + footerH) + frame * 2;
+    var x = Math.round((CONFIG.GAME_WIDTH - w) / 2);
+    var y = Math.round((CONFIG.GAME_HEIGHT - h) / 2);
+    var g = ASSETS.drawInventoryGrid(ctx, x, y, cols, rows, cell, gap, frame, headerH, footerH);
 
-    var cols = 8, rows = 4, cell = 16, gap = 3, frame = 5;
-    var gw = cols * cell + (cols + 1) * gap + frame * 2;
-    var gx = x + Math.round((pw - gw) / 2), gy = y + 22;
-    var cells = ASSETS.drawInventoryGrid(ctx, gx, gy, cols, rows, cell, gap, frame);
-    for (var i = 0; i < INVENTORY_ORDER.length && i < cells.length; i++) {
-      var item = INVENTORY_ORDER[i], cr = cells[i];
+    // Cabeçalho: título centralizado na madeira.
+    var title = 'INVENTARIO';
+    ASSETS.drawText(ctx, title, g.header.x + Math.round((g.header.w - ASSETS.textWidth(title, 1)) / 2),
+      g.header.y + 4, '#f2e2c0', 1);
+
+    // Células.
+    for (var i = 0; i < INVENTORY_ORDER.length && i < g.cells.length; i++) {
+      var item = INVENTORY_ORDER[i], cr = g.cells[i];
       ctx.drawImage(ASSETS.items[item], cr.x + (cell - 8) / 2, cr.y + 2);
       var count = String(world.inventory[item] || 0);
       ASSETS.drawText(ctx, count, cr.x + cell - ASSETS.textWidth(count, 1) - 1, cr.y + cell - 6, PAL.white, 1);
     }
 
-    // Total de gold no canto inferior do inventário.
+    // Rodapé: total de gold.
     var goldTxt = 'GOLD  ' + world.gold;
-    var gcol = goldFlash > 0 ? '#fff2a0' : '#f6c84c';
-    ASSETS.drawText(ctx, goldTxt, x + 12, y + ph - 12, gcol, 1);
-    var hint = '[I] FECHAR';
-    ASSETS.drawText(ctx, hint, x + pw - ASSETS.textWidth(hint, 1) - 12, y + ph - 12, PAL.gray, 1);
+    ASSETS.drawText(ctx, goldTxt, g.footer.x + 4, g.footer.y + 4, goldFlash > 0 ? '#fff2a0' : '#ffe06a', 1);
+    ASSETS.drawText(ctx, '[I]', g.footer.x + g.footer.w - ASSETS.textWidth('[I]', 1) - 4, g.footer.y + 4, '#3a2416', 1);
   }
 
   function drawTooltip(ctx, slot) {
     var lines = [slot.name];
     if (slot.mods.length) lines.push(Stats.describeMods(slot.mods));
-    else if (slot.removable && !slot.filled) lines.push('(vazio)');
-    else if (!slot.removable) lines.push('(so upgrade)');
+    else if (slot.note) lines.push(slot.note);
     var w = 0, i;
     for (i = 0; i < lines.length; i++) w = Math.max(w, ASSETS.textWidth(lines[i], 1));
     w += 8;
