@@ -36,7 +36,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `SCALE` | 4 | Escala inteira de exibição (1920×1080) |
 | `TILE_SIZE` | 16 | Grid base em px |
 | `PLAYER_SPEED` | 90 | Velocidade do jogador (px/s) |
-| `PLAYER_HITBOX_W` / `_H` | 10 / 4 | Hitbox de colisão pelos pés |
+| `PLAYER_HITBOX_W` / `_H` | 10 / 6 | Hitbox de colisão pelos pés |
 | `PLAYER_REACH` | 6 | Alcance do golpe à frente do jogador (px) — o ataque só ocorre de frente para o objeto |
 | `BASE_DAMAGE` | 1 | Atributo base `damage` (dano por hit) |
 | `BASE_ATTACK_SPEED` | 1.0 | Atributo base `attackSpeed` (multiplicador do cooldown) |
