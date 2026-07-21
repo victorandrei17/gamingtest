@@ -259,7 +259,10 @@ Tipos de objetivo (`objective.type`), cada um resolvido por uma entrada em
 `locked: true` em `recipes.js` (ex.: `bronze_axe`) fica esmaecida e bloqueada na
 bancada (`Forge.recipeState` retorna `'locked'`) até que alguma quest concluída
 liste esse id em `reward.unlockRecipe` (`Quests.isRecipeLocked`) — sem precisar
-mutar `RECIPES` em runtime.
+mutar `RECIPES` em runtime. O mesmo padrão vale pra construções: `revealQuest`
+em `BUILDINGS` (ex.: o Ferreiro só aparece após `first_wood`) esconde a área de
+obra inteira — sem marcador tracejado, ícone ou entrega — até aquela quest
+concluir (`Building.isRevealed`, `building.js`).
 
 **UI:** tracker discreto no canto superior direito (título + progresso, ou só o
 título nos objetivos tudo-ou-nada) com um destaque dourado breve ao concluir

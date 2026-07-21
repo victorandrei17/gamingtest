@@ -20,6 +20,12 @@ Building.prototype.areaBox = function () {
   return { x: this.x - w / 2, y: this.y - h / 2, w: w, h: h };
 };
 
+// def.revealQuest (opcional) trava a área de obra escondida até aquela
+// quest ser concluída — antes disso não desenha nem aceita entrega.
+Building.prototype.isRevealed = function () {
+  return !this.def.revealQuest || Quests.isCompleted(this.def.revealQuest);
+};
+
 // Colisão sólida apenas depois de construída (pelos "pés" da casa).
 // terrainUnlock (ex.: ilha) não tem estrutura própria — quem bloqueia é a
 // parede d'água em main.js, então aqui é sempre null.
@@ -54,6 +60,8 @@ Building.prototype.totalDelivered = function () {
 };
 
 Building.prototype.update = function (dt, player, world) {
+  if (this.state === 'site' && !this.isRevealed()) return;
+
   for (var i = this.flying.length - 1; i >= 0; i--) {
     var f = this.flying[i];
     f.t += dt;
@@ -99,6 +107,8 @@ Building.prototype.update = function (dt, player, world) {
 };
 
 Building.prototype.draw = function (ctx, time) {
+  if (this.state === 'site' && !this.isRevealed()) return;
+
   var area = this.areaBox();
   var sprite = ASSETS.buildings[this.type];
 

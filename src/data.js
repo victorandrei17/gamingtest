@@ -67,7 +67,11 @@ var BUILDINGS = {
     cost: { wood: CONFIG.BLACKSMITH_COST },
     buildTime: CONFIG.BUILD_TIME,
     width: 56,   // px do sprite construído (bigorna + fornalha)
-    height: 44
+    height: 44,
+    // A área de obra (marcador tracejado + entrega) só aparece depois que
+    // essa quest é concluída — ver Building.isRevealed (building.js) e
+    // Quests.isCompleted (quests.js).
+    revealQuest: 'first_wood'
   },
   // "Ilha": não é uma estrutura física — é o gatilho que desbloqueia um
   // recorte de 5x5 tiles (80x80) dentro da faixa de água a leste do mapa
