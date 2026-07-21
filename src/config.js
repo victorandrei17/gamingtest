@@ -45,6 +45,9 @@ var CONFIG = {
   DROP_ARC_TIME: 0.35,       // s do arco de ejeção
   MAGNET_TIME: 0.25,         // s do tween de magnetismo até o jogador
 
+  // Pickups fixos no chão (ex.: o machado inicial) — ver pickup.js
+  PICKUP_ANIM_TIME: 2,       // s da animação travada ao pegar (erguendo o item)
+
   // Construção (valores padrão; custo por prédio fica em data.js/BUILDINGS)
   BUILD_TIME: 3,             // s de construção
   BLACKSMITH_COST: 3,        // madeiras

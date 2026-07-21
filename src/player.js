@@ -1,5 +1,5 @@
 // player.js — personagem jogável com máquina de estados explícita.
-// Estados: 'idle' | 'walk' | 'attack'.
+// Estados: 'idle' | 'walk' | 'attack' | 'pickup'.
 'use strict';
 
 function Player(character, x, y) {
@@ -13,7 +13,22 @@ function Player(character, x, y) {
   this.target = null;         // harvestable em contato
   this.hitCooldown = 0;       // tempo até o próximo hit
   this.attackAnimTime = 0;    // tempo restante da animação de golpe
+
+  // Ferramentas básicas: por padrão o jogador só tem a picareta; o machado
+  // precisa ser pego no mundo (ver pickup.js) — sem ele, árvores não reagem
+  // a golpes (ver resolução de alvo em update()).
+  this.hasAxe = false;
+  this.pickupAnimTime = 0;    // >0: tocou um pickup — trava movimento/ataque
+  this.pickupIcon = null;     // ícone erguido acima da cabeça durante a animação
 }
+
+// Chamado por Pickup (pickup.js) ao ser tocado: trava o jogador parado por
+// CONFIG.PICKUP_ANIM_TIME segundos enquanto ele "ergue" o item pego.
+Player.prototype.startPickup = function (iconKey) {
+  this.pickupAnimTime = CONFIG.PICKUP_ANIM_TIME;
+  this.pickupIcon = iconKey;
+  this.setState('pickup');
+};
 
 Player.prototype.hitbox = function () {
   return {
@@ -71,6 +86,15 @@ Player.prototype.moveAxis = function (dx, dy, solids) {
 };
 
 Player.prototype.update = function (dt, world) {
+  // Animação de pickup em andamento (ver startPickup): trava totalmente —
+  // sem movimento, sem ataque — até acabar, mesmo que o jogador aperte algo.
+  if (this.pickupAnimTime > 0) {
+    this.pickupAnimTime -= dt;
+    this.animTime += dt;
+    if (this.pickupAnimTime <= 0) { this.pickupIcon = null; this.setState('idle'); }
+    return;
+  }
+
   // Janela de forja aberta: o jogador continua podendo se mover — é assim que
   // "afastar-se fecha" funciona (a proximidade com o ferreiro é reavaliada a
   // cada frame em Forge.handleInput). Só o ataque automático fica suspenso,
@@ -112,9 +136,14 @@ Player.prototype.update = function (dt, world) {
       for (var i = 0; i < world.harvestables.length; i++) {
         var h = world.harvestables[i];
         if (h.alive && rectsOverlap(front, h.hurtbox())) {
-          this.target = h;
-          this.targetIsEnemy = false;
-          this.weapon = WEAPON_FOR_CATEGORY[RESOURCE_TYPES[h.type].category] || null;
+          var wpn = WEAPON_FOR_CATEGORY[RESOURCE_TYPES[h.type].category] || null;
+          // Sem o machado (ver pickup.js), árvores simplesmente não reagem —
+          // nenhum golpe é iniciado contra elas.
+          if (wpn !== 'axe' || this.hasAxe) {
+            this.target = h;
+            this.targetIsEnemy = false;
+            this.weapon = wpn;
+          }
           break;
         }
       }
@@ -164,4 +193,15 @@ Player.prototype.draw = function (ctx) {
   }
   var w = ASSETS.playerSize.w, h = ASSETS.playerSize.h;
   ctx.drawImage(frame, Math.round(this.x - w / 2), Math.round(this.y - h + 1));
+
+  // Animação de pickup: sem sprite dedicado (arte procedural) — comunica a
+  // ação erguendo o ícone do item pego acima da cabeça, subindo rápido e
+  // ficando parado no alto pelo resto da janela travada.
+  if (this.state === 'pickup' && this.pickupIcon) {
+    var icon = ASSETS.weaponIcons[this.pickupIcon];
+    var t = 1 - Math.max(0, this.pickupAnimTime) / CONFIG.PICKUP_ANIM_TIME;
+    var lift = Math.min(1, t * 3);
+    var iconY = this.y - h - 4 - Math.round(lift * 10);
+    ctx.drawImage(icon, Math.round(this.x - icon.width / 2), Math.round(iconY));
+  }
 };

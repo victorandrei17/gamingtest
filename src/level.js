@@ -35,5 +35,12 @@ var LEVEL = {
   enemies: [
     { type: 'poring', x: 230, y: 180 },
     { type: 'coelho_branco', x: 90, y: 190 }
+  ],
+
+  // Pickups fixos no chão (ver pickup.js): concedem uma ferramenta ao serem
+  // tocados, sem entrar no inventário. x,y = centro. Coluna 4 / linha 6 do
+  // grid de tiles (TILE_SIZE 16 — mesma referência do overlay de DEBUG).
+  pickups: [
+    { type: 'axe', x: 4 * CONFIG.TILE_SIZE + 8, y: 6 * CONFIG.TILE_SIZE + 8 }
   ]
 };

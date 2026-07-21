@@ -190,23 +190,35 @@ var HUD = (function () {
   }
 
   // -------------------------- marcador de objetivo (4.3) --------------------------
-  // Mapa é uma única tela, então basta um ícone pulsante sobre a construção
-  // alvo da quest ativa (some quando ela já está construída).
-  function drawQuestMarker(ctx, world) {
-    var buildingId = Quests.markerBuildingId();
-    if (!buildingId) return;
-    var target = null;
-    for (var i = 0; i < world.buildings.length; i++) {
-      if (world.buildings[i].type === buildingId) { target = world.buildings[i]; break; }
-    }
-    if (!target || target.state === 'built') return;
+  // Mapa é uma única tela, então basta um ícone pulsante sobre o alvo da
+  // quest ativa. Dois casos: uma construção (some quando ela já está
+  // construída) ou uma posição fixa (ex.: um Pickup — some quando ele já
+  // foi coletado, ou seja, quando world.pickups fica vazio).
+  function drawObjectiveArrow(ctx, mx, my) {
     var bob = Math.round(Math.sin(Date.now() / 200) * 2);
-    var mx = Math.round(target.x), my = Math.round(target.y - target.def.height / 2 - 20 + bob);
+    mx = Math.round(mx); my = Math.round(my + bob);
     ASSETS.drawText(ctx, '!', mx - 1, my, '#f6c84c', 2);
     ctx.fillStyle = '#f6c84c';
     ctx.beginPath();
     ctx.moveTo(mx - 3, my + 12); ctx.lineTo(mx + 3, my + 12); ctx.lineTo(mx, my + 16);
     ctx.closePath(); ctx.fill();
+  }
+
+  function drawQuestMarker(ctx, world) {
+    var buildingId = Quests.markerBuildingId();
+    if (buildingId) {
+      var target = null;
+      for (var i = 0; i < world.buildings.length; i++) {
+        if (world.buildings[i].type === buildingId) { target = world.buildings[i]; break; }
+      }
+      if (!target || target.state === 'built') return;
+      drawObjectiveArrow(ctx, target.x, target.y - target.def.height / 2 - 20);
+      return;
+    }
+    var pos = Quests.markerPos();
+    if (pos && world.pickups && world.pickups.length > 0) {
+      drawObjectiveArrow(ctx, pos.x, pos.y - 16);
+    }
   }
 
   // -------------------------- log de quests (4.2, tecla Q) --------------------------
@@ -282,8 +294,10 @@ var HUD = (function () {
     // então "on" é simplesmente o slot apontar pra esse item.
     // `baseWeaponKey` (opcional): ferramenta comum já em uso (machado/picareta)
     // que aparece nítida no slot enquanto o upgrade de bronze não foi forjado —
-    // ao forjar, o slot atualiza sozinho para o ícone de bronze.
-    function forgedSlot(slotKey, iconKey, label, rect, baseWeaponKey) {
+    // ao forjar, o slot atualiza sozinho para o ícone de bronze. `lockedNote`
+    // (opcional): mensagem do slot vazio quando não há baseWeaponKey ainda
+    // disponível (ex.: o machado antes de ser pego no mundo — ver pickup.js).
+    function forgedSlot(slotKey, iconKey, label, rect, baseWeaponKey, lockedNote) {
       var on = eq.slots[slotKey] === iconKey;
       var rec = RECIPE_BY_ID[eq.slots[slotKey]];
       if (on) {
@@ -296,7 +310,7 @@ var HUD = (function () {
                  note: '(ferramenta basica)' };
       }
       return { key: slotKey, rect: rect, icon: ASSETS.forgeIcons[iconKey], dim: true,
-               name: label, mods: [], filled: false, removable: false, note: '(nao forjada)' };
+               name: label, mods: [], filled: false, removable: false, note: lockedNote || '(nao forjada)' };
     }
 
     var rowY = dollTop + 50;
@@ -309,7 +323,7 @@ var HUD = (function () {
         removableSlot('chest', { x: dollX - 30, y: dollTop + 8, w: Ss, h: Ss }),
         removableSlot('ring',  { x: dollX + 42, y: dollTop + 8, w: Ss, h: Ss }),
         forgedSlot('weapon', 'sword', 'Espada', rowRect(0)),
-        forgedSlot('axe', 'bronze_axe', 'Machado', rowRect(1), 'axe'),
+        forgedSlot('axe', 'bronze_axe', 'Machado', rowRect(1), world.player.hasAxe ? 'axe' : null, '(nao encontrado)'),
         forgedSlot('pickaxe', 'bronze_pickaxe', 'Picareta', rowRect(2), 'pickaxe'),
         forgedSlot('boot', 'boot', 'Bota', rowRect(3))
       ]

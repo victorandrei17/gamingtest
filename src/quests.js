@@ -16,7 +16,19 @@
 //   markerBuilding   (opcional) força o marcador de objetivo (4.3) a apontar
 //                    para essa construção mesmo quando objective.type não é
 //                    BUILD
+//   markerPos        (opcional) marcador de objetivo (4.3) apontando pra uma
+//                     posição fixa do mapa em vez de uma construção (ex.: um
+//                     Pickup — some quando world.pickups fica vazio)
 var QUESTS = [
+  {
+    id: 'get_axe',
+    title: 'Machado a Vista',
+    description: 'Pegue o machado no chao.',
+    objective: { type: 'PICKUP', pickupId: 'axe' },
+    reward: {},
+    next: 'first_wood',
+    markerPos: LEVEL.pickups[0] // mesma posição do machado no chão (level.js)
+  },
   {
     id: 'first_wood',
     title: 'Primeiros Passos',
@@ -134,8 +146,19 @@ var QUEST_MATCHERS = {
     bucket: function () { return SINGLE_BUCKET; },
     amount: function () { return 0; },
     targets: function (obj) { var t = {}; t[SINGLE_BUCKET] = obj.amount; return t; }
+  },
+  PICKUP: {
+    eventType: 'PICKUP',
+    matches: function (obj, payload) { return payload.pickupId === obj.pickupId; },
+    bucket: function () { return SINGLE_BUCKET; },
+    amount: function () { return 1; },
+    targets: function () { var t = {}; t[SINGLE_BUCKET] = 1; return t; }
   }
 };
+
+// Tipos tudo-ou-nada: sem contagem fracionária no tracker/log, só a
+// descrição (ver currentProgress/progressLines).
+var BINARY_OBJECTIVE_TYPES = { BUILD: true, FORGE: true, PICKUP: true };
 
 var Quests = (function () {
   var QUEST_BY_ID = {};
@@ -246,14 +269,14 @@ var Quests = (function () {
   }
 
   // { current, target, binary } pro tracker/log. binary = objetivo tudo-ou-
-  // nada (BUILD/FORGE), sem contagem fracionária. Para objetivos com mais de
-  // um balde (COLLECT_SET), current/target somam todos os baldes juntos.
+  // nada (BINARY_OBJECTIVE_TYPES), sem contagem fracionária. Para objetivos
+  // com mais de um balde (COLLECT_SET), current/target somam todos juntos.
   function currentProgress(world) {
     var q = activeQuest();
     if (!q) return null;
     var obj = q.objective;
     if (obj.type === 'GOLD') return { current: Math.min(world.gold, obj.amount), target: obj.amount, binary: false };
-    if (obj.type === 'BUILD' || obj.type === 'FORGE') return { current: 0, target: 1, binary: true };
+    if (BINARY_OBJECTIVE_TYPES[obj.type]) return { current: 0, target: 1, binary: true };
     var targets = QUEST_MATCHERS[obj.type].targets(obj);
     var current = 0, target = 0;
     for (var k in targets) { current += Math.min(progress[k] || 0, targets[k]); target += targets[k]; }
@@ -280,7 +303,7 @@ var Quests = (function () {
       }
       return lines;
     }
-    if (obj.type === 'BUILD' || obj.type === 'FORGE') return [q.description];
+    if (BINARY_OBJECTIVE_TYPES[obj.type]) return [q.description];
     var prog = currentProgress(world);
     return [q.description + '  ' + prog.current + '/' + prog.target];
   }
@@ -292,6 +315,13 @@ var Quests = (function () {
     if (!q) return null;
     if (q.objective.type === 'BUILD') return q.objective.buildingId;
     return q.markerBuilding || null;
+  }
+
+  // Posição fixa do marcador de objetivo (4.3) pra quests que apontam pra
+  // algo que não é uma construção (ex.: um Pickup no chão).
+  function markerPos() {
+    var q = activeQuest();
+    return q ? (q.markerPos || null) : null;
   }
 
   return {
@@ -308,6 +338,7 @@ var Quests = (function () {
     progressLines: progressLines,
     chainOrder: chainOrder,
     markerBuildingId: markerBuildingId,
+    markerPos: markerPos,
     byId: byId,
     flashTime: function () { return flashTime; },
     debugState: function () { return { activeId: activeId, progress: progress, ready: ready, completed: completed }; }

@@ -53,6 +53,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `COLLECT_RADIUS` | 20 | Raio de atração dos drops (px) |
 | `DROP_ARC_TIME` | 0.35 | Duração do arco de ejeção do drop |
 | `MAGNET_TIME` | 0.25 | Duração do tween de magnetismo até o jogador |
+| `PICKUP_ANIM_TIME` | 2 | Segundos travado erguendo um item pego no chão (ver `pickup.js`) |
 | `BUILD_TIME` | 3 | Segundos de construção |
 | `BLACKSMITH_COST` | 3 | Madeiras para o Ferreiro |
 | `DELIVER_INTERVAL` | 0.2 | Intervalo entre cada madeira voando até a área |
@@ -83,7 +84,8 @@ src/equipment.js    itens equipados → injeta modificadores em stats
 src/assets.js       TODA a arte (procedural) — única camada a trocar por sprites reais
 src/input.js        teclado (vetor normalizado nas diagonais) + mouse
 src/effects.js      partículas de hit e pop de coleta
-src/player.js       máquina de estados idle/walk/attack, colisão; lê dano/velocidade de stats
+src/player.js       máquina de estados idle/walk/attack/pickup, colisão; lê dano/velocidade de stats
+src/pickup.js       itens fixos no chão que concedem uma ferramenta ao serem tocados (ex.: o machado)
 src/harvestable.js  ciclo alive → destroyed → respawning → spawning
 src/drops.js        arco de ejeção, magnetismo, coleta
 src/building.js     área de obra: entrega item a item → obra → construído
@@ -103,6 +105,10 @@ ativa, progresso e mapa de concluídas) para inspeção no console.
 - **Nona instância de objeto**: uma linha nova em `LEVEL.objects` (`level.js`).
 - **Nova arma**: entrada em `WEAPON_TYPES` com `targetCategory` + ícone/animação em
   `assets.js`; a seleção automática usa o índice derivado `WEAPON_FOR_CATEGORY`.
+- **Novo pickup** (item fixo no chão que concede uma ferramenta, ex.: o machado):
+  uma linha em `LEVEL.pickups` (`type` referencia `ASSETS.weaponIcons`) — `pickup.js`
+  faz o resto (detecção de toque, animação travada de `CONFIG.PICKUP_ANIM_TIME`s
+  erguendo o item, disparo do evento `PICKUP` pras quests).
 - **Nova construção**: entrada em `BUILDINGS` (custo, tempo, mensagem, tamanho) +
   instância em `LEVEL.buildings` + sprite em `ASSETS.buildings`. Só o ferreiro
   abre a janela de forja (`Forge.nearSmith` filtra por `type: 'blacksmith'`) —
@@ -251,6 +257,7 @@ Tipos de objetivo (`objective.type`), cada um resolvido por uma entrada em
 | `FORGE` | `recipeId` | forja concluída |
 | `SELL` | `item` (ou `'any'`), `amount` | itens vendidos na aba VENDER |
 | `GOLD` | `amount` | `world.gold` acumulado (evitar encadear logo após uma quest que dá gold de reward — ver nota acima) |
+| `PICKUP` | `pickupId` | um `Pickup` do chão foi tocado (`pickup.js`) — ver Ferramentas abaixo |
 
 `reward` aceita, todos opcionais: `gold` (soma a `world.gold`), `items`
 (`{ itemId: quantidade }`, soma ao inventário), `modifiers` (lista
@@ -270,16 +277,31 @@ título nos objetivos tudo-ou-nada) com um destaque dourado breve ao concluir
 completo em `[Q]`, na mesma moldura (`ASSETS.drawPanel`) do equipamento/inventário,
 listando concluídas (marcadas), a ativa (com progresso e descrição) e as
 próximas da cadeia esmaecidas (só o título, sem revelar o objetivo); e um
-marcador pulsante (`!`) sobre a construção-alvo quando ela ainda não foi
-concluída (`Quests.markerBuildingId` — direto da quest para `BUILD`, ou via o
-campo opcional `markerBuilding` para objetivos que não são `BUILD`, como a
-quest final apontando para a ilha).
+marcador pulsante (`!`) sobre o alvo da quest quando ele ainda não foi
+concluído/coletado: `Quests.markerBuildingId` aponta pra uma construção (direto
+pra objetivos `BUILD`, ou via o campo opcional `markerBuilding` quando o
+objetivo não é `BUILD`); `Quests.markerPos` aponta pra uma posição fixa do
+mapa via o campo opcional `markerPos` (usado pelo machado — some quando
+`world.pickups` esvazia).
 
-Cadeia atual: coletar madeira → construir o Ferreiro → forjar a Espada
-(desbloqueia o Machado de Bronze) → vender 5 itens → caçar Poring/Coelho Branco
-por Geléia Rosa e Pluma → entregar os dois na área da ilha (`BUILDINGS.island.cost`)
-— guiando o jogador até a expansão da ilha, que já existia no código mas não
-tinha nenhum gancho narrativo até agora.
+### Ferramentas: o machado precisa ser encontrado
+
+O jogador começa **sem o machado** — só com a picareta (`Player.hasAxe = false`
+por padrão). Sem ele, árvores simplesmente não reagem a golpes (checado em
+`Player.update`, `player.js`); o slot do machado no painel de equipamento
+(`[C]`) fica esmaecido com a nota "(nao encontrado)" até então. O machado é um
+`Pickup` (`pickup.js`) parado no mapa (`LEVEL.pickups`, `level.js`) — ao
+encostar nele, o jogador ganha `hasAxe = true` na hora e entra no estado
+`'pickup'` (`Player.startPickup`), travado por `CONFIG.PICKUP_ANIM_TIME`
+segundos erguendo o ícone do item acima da cabeça (sem sprite dedicado — arte
+procedural), ignorando totalmente input de movimento/ataque nesse intervalo.
+O toque também dispara o evento `PICKUP` pras quests.
+
+Cadeia atual: **achar o machado** → coletar madeira → construir o Ferreiro →
+forjar a Espada (desbloqueia o Machado de Bronze) → vender 5 itens → caçar
+Poring/Coelho Branco por Geléia Rosa e Pluma → entregar os dois na área da
+ilha (`BUILDINGS.island.cost`) — guiando o jogador até a expansão da ilha, que
+já existia no código mas não tinha nenhum gancho narrativo até agora.
 
 ## Sprites a substituir (`src/assets.js`)
 

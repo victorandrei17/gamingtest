@@ -38,6 +38,7 @@
       harvestables: [],
       buildings: [],
       enemies: [],
+      pickups: [],
       drops: [],
       particles: [],
       pops: [],
@@ -71,6 +72,12 @@
       for (i = 0; i < LEVEL.enemies.length; i++) {
         var e = LEVEL.enemies[i];
         w.enemies.push(new Enemy(e.type, e.x, e.y));
+      }
+    }
+    if (LEVEL.pickups) {
+      for (i = 0; i < LEVEL.pickups.length; i++) {
+        var pk = LEVEL.pickups[i];
+        w.pickups.push(new Pickup(pk.type, pk.x, pk.y));
       }
     }
     w.forge = new Forge(w); // interação com o ferreiro + janela de forja
@@ -146,6 +153,10 @@
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].update(dt);
     for (i = 0; i < world.buildings.length; i++) world.buildings[i].update(dt, world.player, world);
     for (i = 0; i < world.enemies.length; i++) world.enemies[i].update(dt, world);
+    for (i = world.pickups.length - 1; i >= 0; i--) {
+      world.pickups[i].update(dt, world.player, world);
+      if (world.pickups[i].dead) world.pickups.splice(i, 1);
+    }
     for (i = world.drops.length - 1; i >= 0; i--) {
       world.drops[i].update(dt, world.player, world);
       if (world.drops[i].dead) world.drops.splice(i, 1);
@@ -177,6 +188,7 @@
     }
 
     var i;
+    for (i = 0; i < world.pickups.length; i++) world.pickups[i].draw(ctx);
     for (i = 0; i < world.drops.length; i++) world.drops[i].draw(ctx);
 
     // Ordenação por Y (pés) para profundidade top-down correta.
