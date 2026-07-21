@@ -82,7 +82,7 @@ var BUILDINGS = {
   island: {
     name: 'Nova Área',
     unlockMessage: 'NOVA ILHA CRIADA',
-    cost: { geleia_rosa: 1 },
+    cost: { geleia_rosa: 1, pluma: 1 },
     buildTime: 0.2,   // quase instantâneo — o efeito é a explosão, não uma obra longa
     width: 80,        // 5x5 tiles (TILE_SIZE 16 * 5)
     height: 80,

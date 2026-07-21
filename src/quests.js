@@ -15,7 +15,7 @@
 //                        passa a ser considerada desbloqueada
 //   markerBuilding   (opcional) força o marcador de objetivo (4.3) a apontar
 //                    para essa construção mesmo quando objective.type não é
-//                    BUILD (ex.: a quest final aponta pra ilha)
+//                    BUILD
 var QUESTS = [
   {
     id: 'first_wood',
@@ -47,57 +47,93 @@ var QUESTS = [
     description: 'Venda 5 itens na aba VENDER do Ferreiro.',
     objective: { type: 'SELL', item: 'any', amount: 5 },
     reward: { gold: 20 },
+    next: 'hunt_rare_drops'
+  },
+  {
+    id: 'hunt_rare_drops',
+    title: 'Primeira Cacada',
+    description: 'Colete 1 Geleia Rosa e 1 Pluma.',
+    objective: { type: 'COLLECT_SET', items: { geleia_rosa: 1, pluma: 1 } },
+    reward: { gold: 15 },
     next: 'reach_island'
   },
   {
     id: 'reach_island',
-    title: 'Rumo ao Mar',
-    description: 'Acumule 30 de ouro e desbraveie a nova area a leste.',
-    objective: { type: 'GOLD', amount: 30 },
+    title: 'Terras Novas',
+    description: 'Entregue os itens na nova area a leste para desbravar a ilha.',
+    objective: { type: 'BUILD', buildingId: 'island' },
     reward: {},
-    next: null,
-    markerBuilding: 'island'
+    next: null
   }
 ];
 
-// Um resolvedor por tipo de objetivo. `matches` decide se um evento conta
-// para o objetivo ativo; `amount` quanto ele soma ao progresso; `target`
-// quanto é preciso para completar. GOLD não usa matches/amount — é conferido
-// direto contra world.gold em Quests.update (ver mais abaixo).
+// Um resolvedor por tipo de objetivo. `eventType` é o tipo de evento (o
+// primeiro argumento de Quests.onEvent, disparado pelos outros sistemas) que
+// esse objetivo escuta — várias entradas podem escutar o mesmo eventType
+// (ex.: COLLECT e COLLECT_SET reagem ao mesmo evento 'COLLECT' de drops.js,
+// só mudam como validam/contam). `matches` decide se aquele evento em
+// particular conta para o objetivo ativo; `bucket` em qual "balde" de
+// progresso ele soma (a maioria dos tipos tem um único balde fixo '_';
+// COLLECT_SET tem um por item, pra poder pedir mais de um item na mesma
+// quest); `amount` quanto soma nesse balde; `targets` quanto cada balde
+// precisa pra completar. GOLD não tem eventType — é estado acumulado,
+// conferido direto contra world.gold em Quests.update (ver mais abaixo).
+var SINGLE_BUCKET = '_';
 var QUEST_MATCHERS = {
   COLLECT: {
+    eventType: 'COLLECT',
     matches: function (obj, payload) { return payload.item === obj.item; },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function (payload) { return payload.amount; },
-    target: function (obj) { return obj.amount; }
+    targets: function (obj) { var t = {}; t[SINGLE_BUCKET] = obj.amount; return t; }
+  },
+  // Coleta de vários itens diferentes numa mesma quest: objective.items é
+  // { itemId: quantidade, ... }; cada item é o seu próprio balde de progresso.
+  COLLECT_SET: {
+    eventType: 'COLLECT',
+    matches: function (obj, payload) { return Object.prototype.hasOwnProperty.call(obj.items, payload.item); },
+    bucket: function (payload) { return payload.item; },
+    amount: function (payload) { return payload.amount; },
+    targets: function (obj) { return obj.items; }
   },
   DESTROY: {
+    eventType: 'DESTROY',
     matches: function (obj, payload) {
       if (obj.resourceId) return payload.resourceId === obj.resourceId;
       if (obj.category) return payload.category === obj.category;
       return false;
     },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function () { return 1; },
-    target: function (obj) { return obj.amount; }
+    targets: function (obj) { var t = {}; t[SINGLE_BUCKET] = obj.amount; return t; }
   },
   BUILD: {
+    eventType: 'BUILD',
     matches: function (obj, payload) { return payload.buildingId === obj.buildingId; },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function () { return 1; },
-    target: function () { return 1; }
+    targets: function () { var t = {}; t[SINGLE_BUCKET] = 1; return t; }
   },
   FORGE: {
+    eventType: 'FORGE',
     matches: function (obj, payload) { return payload.recipeId === obj.recipeId; },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function () { return 1; },
-    target: function () { return 1; }
+    targets: function () { var t = {}; t[SINGLE_BUCKET] = 1; return t; }
   },
   SELL: {
+    eventType: 'SELL',
     matches: function (obj, payload) { return obj.item === 'any' || obj.item == null || payload.item === obj.item; },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function (payload) { return payload.amount; },
-    target: function (obj) { return obj.amount; }
+    targets: function (obj) { var t = {}; t[SINGLE_BUCKET] = obj.amount; return t; }
   },
   GOLD: {
+    eventType: null,
     matches: function () { return false; },
+    bucket: function () { return SINGLE_BUCKET; },
     amount: function () { return 0; },
-    target: function (obj) { return obj.amount; }
+    targets: function (obj) { var t = {}; t[SINGLE_BUCKET] = obj.amount; return t; }
   }
 };
 
@@ -107,21 +143,21 @@ var Quests = (function () {
 
   var activeId = null;
   var completed = {};   // id -> true
-  var progress = 0;     // contador do objetivo ativo (só usado por COLLECT/DESTROY/SELL)
+  var progress = {};    // balde -> contador (balde único '_' na maioria dos tipos, um por item em COLLECT_SET)
   var ready = false;    // objetivo já atingido, aguardando o jogador clicar no tracker pra coletar
   var flashTime = 0;    // s restantes do destaque dourado após coletar
 
   function reset() {
     activeId = null;
     completed = {};
-    progress = 0;
+    progress = {};
     ready = false;
     flashTime = 0;
   }
 
   function start(id) {
     activeId = id;
-    progress = 0;
+    progress = {};
     ready = false;
   }
 
@@ -178,19 +214,27 @@ var Quests = (function () {
     flashTime = CONFIG.UNLOCK_MSG_TIME;
     world.showMessage('QUEST CONCLUIDA: ' + q.title.toUpperCase(), CONFIG.UNLOCK_MSG_TIME);
     if (q.next) start(q.next);
-    else { activeId = null; progress = 0; ready = false; }
+    else { activeId = null; progress = {}; ready = false; }
+  }
+
+  function allTargetsMet(targets) {
+    for (var k in targets) { if ((progress[k] || 0) < targets[k]) return false; }
+    return true;
   }
 
   // Chamado pelos sistemas existentes no ponto em que o efeito já acontece
-  // (destruição, coleta, construção, forja, venda). Só faz algo se o tipo
-  // bater com o objetivo da quest ativa no momento.
+  // (destruição, coleta, construção, forja, venda). Só faz algo se o
+  // eventType do objetivo ativo bater com o evento recebido — o objective.type
+  // pode ser mais específico que o evento (ex.: COLLECT_SET reage a 'COLLECT').
   function onEvent(type, payload, world) {
     var q = activeQuest();
-    if (!q || ready || q.objective.type !== type) return;
-    var obj = q.objective, matcher = QUEST_MATCHERS[type];
+    if (!q || ready) return;
+    var obj = q.objective, matcher = QUEST_MATCHERS[obj.type];
+    if (!matcher || matcher.eventType !== type) return;
     if (!matcher.matches(obj, payload)) return;
-    progress += matcher.amount(payload);
-    if (progress >= matcher.target(obj)) markReady();
+    var key = matcher.bucket(payload);
+    progress[key] = (progress[key] || 0) + matcher.amount(payload);
+    if (allTargetsMet(matcher.targets(obj))) markReady();
   }
 
   // GOLD é estado acumulado, não um evento pontual — conferido a cada frame.
@@ -202,14 +246,18 @@ var Quests = (function () {
   }
 
   // { current, target, binary } pro tracker/log. binary = objetivo tudo-ou-
-  // nada (BUILD/FORGE), sem contagem fracionária.
+  // nada (BUILD/FORGE), sem contagem fracionária. Para objetivos com mais de
+  // um balde (COLLECT_SET), current/target somam todos os baldes juntos.
   function currentProgress(world) {
     var q = activeQuest();
     if (!q) return null;
     var obj = q.objective;
     if (obj.type === 'GOLD') return { current: Math.min(world.gold, obj.amount), target: obj.amount, binary: false };
     if (obj.type === 'BUILD' || obj.type === 'FORGE') return { current: 0, target: 1, binary: true };
-    return { current: progress, target: QUEST_MATCHERS[obj.type].target(obj), binary: false };
+    var targets = QUEST_MATCHERS[obj.type].targets(obj);
+    var current = 0, target = 0;
+    for (var k in targets) { current += Math.min(progress[k] || 0, targets[k]); target += targets[k]; }
+    return { current: current, target: target, binary: false };
   }
 
   // Construção alvo do marcador de objetivo (4.3): BUILD aponta pra si

@@ -126,7 +126,7 @@ do retângulo, que existe só enquanto a construção `island` não está `'buil
 `Building.solidBox`/`draw` (`building.js`) não geram sólido nem sprite próprios
 para ela — só a área de entrega (dashed marker + ícone + contador, igual ao
 ferreiro) aparece encostada na fronteira verde/água, alcançável do lado de
-dentro. Ao entregar o item (`cost: { geleia_rosa: 1 }`), a construção completa
+dentro. Ao entregar os itens (`cost: { geleia_rosa: 1, pluma: 1 }`), a construção completa
 (`explosionOnBuild: true`, partículas via `ASSETS.particleColors.island`), o
 quarto sólido some e `main.js` sobrepõe `ASSETS.groundExtension` — só sobre o
 retângulo 5x5, não a faixa inteira — com o mesmo xadrez de grama do resto do
@@ -217,7 +217,14 @@ nenhum deles foi reestruturado, cada um só ganhou uma chamada a `Quests.onEvent
 no ponto em que o efeito já acontecia (destruição em `harvestable.js`, coleta em
 `drops.js`, construção concluída em `building.js`, forja e venda em `forge.js`).
 `GOLD` é a exceção: como é estado acumulado (não um evento pontual), é conferido
-a cada frame por `Quests.update`, chamado de `main.js` junto do resto do loop.
+a cada frame por `Quests.update`, chamado de `main.js` junto do resto do loop —
+por isso não é usado em quests que vêm depois de outra que já dá gold de reward
+na mesma cadeia (o total já bateria a meta no instante em que ela ativa).
+
+Ao atingir o objetivo a quest **não conclui sozinha**: ela vira `Quests.isReady()`
+e o tracker pulsa convidando o clique. Só quando o jogador clica no tracker
+(`Quests.claim`, chamado de `HUD.update`) é que a reward é aplicada, a mensagem
+de conclusão aparece e a próxima da cadeia (`next`) é ativada.
 
 Formato de uma quest:
 
@@ -238,11 +245,12 @@ Tipos de objetivo (`objective.type`), cada um resolvido por uma entrada em
 | Tipo | Campos | Conta contra |
 |---|---|---|
 | `COLLECT` | `item`, `amount` | quantidade **ganha** desde o início da quest (não o total do inventário — não completa sozinha por causa do estoque de `START_INVENTORY_QTY`) |
+| `COLLECT_SET` | `items: { itemId: quantidade, ... }` | igual `COLLECT`, mas pedindo vários itens diferentes na mesma quest — cada item é o seu próprio "balde" de progresso, todos precisam bater a meta |
 | `DESTROY` | `category` ou `resourceId`, `amount` | harvestables destruídos |
 | `BUILD` | `buildingId` | construção concluída |
 | `FORGE` | `recipeId` | forja concluída |
 | `SELL` | `item` (ou `'any'`), `amount` | itens vendidos na aba VENDER |
-| `GOLD` | `amount` | `world.gold` acumulado |
+| `GOLD` | `amount` | `world.gold` acumulado (evitar encadear logo após uma quest que dá gold de reward — ver nota acima) |
 
 `reward` aceita, todos opcionais: `gold` (soma a `world.gold`), `items`
 (`{ itemId: quantidade }`, soma ao inventário), `modifiers` (lista
@@ -265,9 +273,10 @@ campo opcional `markerBuilding` para objetivos que não são `BUILD`, como a
 quest final apontando para a ilha).
 
 Cadeia atual: coletar madeira → construir o Ferreiro → forjar a Espada
-(desbloqueia o Machado de Bronze) → vender 5 itens → acumular gold — guiando o
-jogador até a expansão da ilha, que já existia no código mas não tinha nenhum
-gancho narrativo até agora.
+(desbloqueia o Machado de Bronze) → vender 5 itens → caçar Poring/Coelho Branco
+por Geléia Rosa e Pluma → entregar os dois na área da ilha (`BUILDINGS.island.cost`)
+— guiando o jogador até a expansão da ilha, que já existia no código mas não
+tinha nenhum gancho narrativo até agora.
 
 ## Sprites a substituir (`src/assets.js`)
 
