@@ -64,6 +64,7 @@ var CONFIG = {
   // Inimigos
   ENEMY_SPEED: 45,           // px/s (50% de PLAYER_SPEED)
   ENEMY_VISION_RADIUS: 120,  // px — distância para detectar o jogador
+  ENEMY_STOP_DISTANCE: 12,   // px — distância mínima ao seguir (evita sobrepor o jogador)
   ENEMY_HP: 3,               // vida dos inimigos
   ENEMY_IDLE_ANIM_SPEED: 4   // frames/s da animação de idle
 };

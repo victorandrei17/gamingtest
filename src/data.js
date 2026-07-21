@@ -5,12 +5,15 @@
 
 // Itens coletáveis (o que vai para o inventário / HUD).
 // A ordem de INVENTORY_ORDER define a ordem dos slots no HUD.
+// startQty (opcional): quantidade inicial no inventário — por padrão usa
+// CONFIG.START_INVENTORY_QTY; itens que só vêm de drop (ex.: geléia rosa)
+// declaram startQty: 0 para não nascer no inventário.
 var ITEM_TYPES = {
   wood:        { name: 'Madeira' },
   iron_ore:    { name: 'Minério de Ferro' },
   bronze_ore:  { name: 'Minério de Bronze' },
   stone_piece: { name: 'Pedra' },
-  geleia_rosa: { name: 'Geléia Rosa' }
+  geleia_rosa: { name: 'Geléia Rosa', startQty: 0 }
 };
 var INVENTORY_ORDER = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece', 'geleia_rosa'];
 

@@ -41,11 +41,10 @@
     w.equipment = new Equipment(w.stats);
 
     var i;
-    // Inicializa inventário com recursos coletáveis (exclui drops de inimigos)
-    var collectibles = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece'];
-    for (i = 0; i < collectibles.length; i++) w.inventory[collectibles[i]] = CONFIG.START_INVENTORY_QTY;
     for (i = 0; i < INVENTORY_ORDER.length; i++) {
-      if (!w.inventory[INVENTORY_ORDER[i]]) w.inventory[INVENTORY_ORDER[i]] = 0;
+      var itemDef = ITEM_TYPES[INVENTORY_ORDER[i]];
+      var startQty = itemDef.startQty != null ? itemDef.startQty : CONFIG.START_INVENTORY_QTY;
+      w.inventory[INVENTORY_ORDER[i]] = startQty;
     }
     for (i = 0; i < LEVEL.objects.length; i++) {
       var o = LEVEL.objects[i];
@@ -79,18 +78,29 @@
     w.spawnPop = function (x, y) { w.pops.push(new Pop(x, y)); };
     w.showMessage = function (text, secs) { w.message = text; w.messageTime = secs; };
 
+    // owner: referência à entidade dona do sólido — permite que uma entidade
+    // que se move (Enemy) ignore seu próprio sólido ao resolver colisão
+    // contra world.solids (senão ela se auto-empurra a cada frame).
     w.rebuildSolids = function () {
       w.solids.length = 0;
-      var j;
+      var j, sb;
       for (j = 0; j < w.harvestables.length; j++) {
-        if (w.harvestables[j].alive) w.solids.push(w.harvestables[j].solidBox());
+        if (w.harvestables[j].alive) {
+          sb = w.harvestables[j].solidBox();
+          sb.owner = w.harvestables[j];
+          w.solids.push(sb);
+        }
       }
       for (j = 0; j < w.buildings.length; j++) {
-        var sb = w.buildings[j].solidBox();
-        if (sb) w.solids.push(sb);
+        sb = w.buildings[j].solidBox();
+        if (sb) { sb.owner = w.buildings[j]; w.solids.push(sb); }
       }
       for (j = 0; j < w.enemies.length; j++) {
-        if (w.enemies[j].alive) w.solids.push(w.enemies[j].solidBox());
+        if (w.enemies[j].alive) {
+          sb = w.enemies[j].solidBox();
+          sb.owner = w.enemies[j];
+          w.solids.push(sb);
+        }
       }
     };
     return w;
@@ -151,7 +161,6 @@
     for (i = 0; i < entities.length; i++) {
       var e = entities[i].e;
       if (e instanceof Building) e.draw(ctx, time);
-      else if (e instanceof Enemy) e.draw(ctx);
       else e.draw(ctx);
     }
 

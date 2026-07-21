@@ -1,6 +1,9 @@
 // enemy.js — inimigos (geléia rosa / Poring).
 // Ciclo de vida: alive -> destroyed (desaparecendo) -> dead.
-// AI: segue o jogador se dentro do raio de visão.
+// AI: segue o jogador se dentro do raio de visão, para a uma distância mínima
+// (não sobrepõe o jogador). Depende de `rectsOverlap` (player.js) e
+// `flashCanvasFor`/`_flashScratch` (harvestable.js), carregados antes deste
+// arquivo em index.html — não redeclarar aqui.
 'use strict';
 
 function Enemy(type, x, y) {
@@ -41,16 +44,12 @@ function distanceTo(x1, y1, x2, y2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-function rectsOverlap(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x &&
-         a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
 Enemy.prototype.moveAxis = function (dx, dy, solids) {
   this.x += dx; this.y += dy;
   var hb = this.solidBox();
   for (var i = 0; i < solids.length; i++) {
     var s = solids[i];
+    if (s.owner === this) continue; // não colide com o próprio sólido
     if (!rectsOverlap(hb, s)) continue;
     if (dx > 0) this.x = s.x - hb.w / 2;
     else if (dx < 0) this.x = s.x + s.w + hb.w / 2;
@@ -66,8 +65,9 @@ Enemy.prototype.moveAxis = function (dx, dy, solids) {
 Enemy.prototype.takeHit = function (dmg, weaponId, world) {
   if (!this.alive) return;
 
-  // Inimigos só recebem dano de espada / upgrades de espada
-  if (weaponId !== 'sword' && weaponId !== 'sword_upgrade') return;
+  // Inimigos só recebem dano de espada (upgrades da espada só somam no
+  // atributo `damage`, não trocam o weaponId — ver player.js).
+  if (weaponId !== 'sword') return;
 
   this.hp -= dmg;
   this.flashTime = 0.08;
@@ -100,17 +100,16 @@ Enemy.prototype.update = function (dt, world) {
   if (this.state === 'alive') {
     var dist = distanceTo(this.x, this.y, world.player.x, world.player.y);
 
-    if (dist < CONFIG.ENEMY_VISION_RADIUS) {
-      // Segue o jogador
+    // Segue o jogador dentro do raio de visão, mas para a uma distância
+    // mínima — sem isso o jogador não é um sólido em world.solids (só
+    // harvestables/construções/inimigos são) e o inimigo sobreporia/
+    // atravessaria o personagem em vez de "encostar" nele.
+    if (dist < CONFIG.ENEMY_VISION_RADIUS && dist > CONFIG.ENEMY_STOP_DISTANCE) {
       var dx = world.player.x - this.x;
       var dy = world.player.y - this.y;
-      var len = Math.sqrt(dx * dx + dy * dy);
-      if (len > 1) {
-        this.vx = (dx / len) * CONFIG.ENEMY_SPEED;
-        this.vy = (dy / len) * CONFIG.ENEMY_SPEED;
-      }
+      this.vx = (dx / dist) * CONFIG.ENEMY_SPEED;
+      this.vy = (dy / dist) * CONFIG.ENEMY_SPEED;
     } else {
-      // Para de se mover
       this.vx = 0;
       this.vy = 0;
     }
@@ -205,21 +204,3 @@ DeathParticle.prototype.draw = function (ctx) {
   ctx.fillRect(x - size / 2, y - size / 2, size, size);
   ctx.globalAlpha = 1.0;
 };
-
-// Reutiliza a função de flash branco de harvestable.js (ou cria se não existir)
-var _flashScratch = null;
-function flashCanvasFor(spriteCanvas) {
-  if (!_flashScratch) {
-    _flashScratch = document.createElement('canvas');
-  }
-  _flashScratch.width = spriteCanvas.width;
-  _flashScratch.height = spriteCanvas.height;
-  var c = _flashScratch.getContext('2d');
-  c.imageSmoothingEnabled = false;
-  c.drawImage(spriteCanvas, 0, 0);
-  c.globalCompositeOperation = 'source-in';
-  c.fillStyle = ASSETS.palette.white;
-  c.fillRect(0, 0, _flashScratch.width, _flashScratch.height);
-  c.globalCompositeOperation = 'source-over';
-  return _flashScratch;
-}
