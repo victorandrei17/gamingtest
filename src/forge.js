@@ -82,7 +82,7 @@ Forge.prototype.sellSelected = function () {
   if (!item || (this.world.inventory[item] || 0) <= 0) { this.deny(); return; }
   this.world.inventory[item] -= 1;
   this.world.gold += CONFIG.GOLD_PER_ITEM;
-  HUD.notifyGold();
+  HUD.notifyGold(CONFIG.GOLD_PER_ITEM);
   Quests.onEvent('SELL', { item: item, amount: 1 }, this.world);
   var n = this.sellList().length;
   if (this.selected >= n) this.selected = Math.max(0, n - 1);

@@ -10,7 +10,8 @@ var HUD = (function () {
   var pulse = {};        // itemId -> tempo do pulso do contador
   var floaters = [];     // { item, t } "+1" flutuante ao coletar
   var statFlash = {};    // stat -> { from, to, t } destaque dourado
-  var goldFlash = 0;     // destaque do total de gold ao vender
+  var goldFlash = 0;     // destaque do total de gold ao vender/receber recompensa
+  var goldFloaters = []; // { amount, t } "+N" flutuante ao ganhar gold
   var activePanel = null; // null | 'equipment' | 'inventory'
   var debugVisible = true; // toggle em runtime do overlay de DEBUG (botão)
 
@@ -42,7 +43,10 @@ var HUD = (function () {
     floaters.push({ item: itemId, t: CONFIG.FLOAT_TEXT_TIME });
   }
   function flashStat(stat, from, to) { statFlash[stat] = { from: from, to: to, t: CONFIG.STAT_FLASH_TIME }; }
-  function notifyGold() { goldFlash = CONFIG.STAT_FLASH_TIME; }
+  function notifyGold(amount) {
+    goldFlash = CONFIG.STAT_FLASH_TIME;
+    if (amount) goldFloaters.push({ amount: amount, t: CONFIG.FLOAT_TEXT_TIME });
+  }
   function closePanels() { activePanel = null; }
   function openEquipment() { activePanel = 'equipment'; }
   function openInventory() { activePanel = 'inventory'; }
@@ -63,12 +67,22 @@ var HUD = (function () {
       floaters[i].t -= dt;
       if (floaters[i].t <= 0) floaters.splice(i, 1);
     }
+    for (var g = goldFloaters.length - 1; g >= 0; g--) {
+      goldFloaters[g].t -= dt;
+      if (goldFloaters[g].t <= 0) goldFloaters.splice(g, 1);
+    }
     if (INPUT.wasPressed('KeyC')) setPanel(activePanel === 'equipment' ? null : 'equipment', world);
     if (INPUT.wasPressed('KeyI')) setPanel(activePanel === 'inventory' ? null : 'inventory', world);
     if (INPUT.wasPressed('KeyQ')) setPanel(activePanel === 'quests' ? null : 'quests', world);
     if (INPUT.wasPressed('Escape') && activePanel) activePanel = null;
     if (CONFIG.DEBUG && INPUT.wasClicked() && pointInRect(INPUT.mouse, debugBtnRect())) {
       debugVisible = !debugVisible;
+    }
+    // Quest pronta pra coletar: só conclui (aplica reward + avança a cadeia)
+    // quando o jogador clica no tracker — ver Quests.claim.
+    if (Quests.isReady() && INPUT.wasClicked()) {
+      var lay = trackerLayout(world);
+      if (lay && pointInRect(INPUT.mouse, lay)) Quests.claim(world);
     }
   }
 
@@ -106,30 +120,68 @@ var HUD = (function () {
       ASSETS.drawText(ctx, '+1', stripSlotX(idx) + 12, STRIP_Y + 14 - Math.round(prog * 12), PAL.leafLight, 1);
       ctx.restore();
     }
+
+    // Moedinha + total de gold — sempre visível, mesmo padrão de pulso/
+    // "+N" flutuante dos itens acima, pra dar feedback visual de recompensas
+    // (venda, reward de quest) sem precisar abrir inventário/forja.
+    var gx = stripSlotX(items.length), gy = STRIP_Y;
+    ctx.fillStyle = 'rgba(26,28,44,0.6)';
+    ctx.fillRect(gx, gy, SLOT_W - 2, 12);
+    ctx.fillStyle = '#f6c84c';
+    ctx.beginPath(); ctx.arc(gx + 6, gy + 6, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#c98a2c';
+    ctx.beginPath(); ctx.arc(gx + 6, gy + 6, 1, 0, Math.PI * 2); ctx.fill();
+    var goldScale = goldFlash > 0 ? 2 : 1;
+    ASSETS.drawText(ctx, String(world.gold), gx + 12, gy + (goldScale === 2 ? 1 : 3),
+      goldFlash > 0 ? '#fff2a0' : PAL.iron, goldScale);
+    for (var gf = 0; gf < goldFloaters.length; gf++) {
+      var gfl = goldFloaters[gf];
+      var gprog = 1 - gfl.t / CONFIG.FLOAT_TEXT_TIME;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - gprog);
+      ASSETS.drawText(ctx, '+' + gfl.amount, gx + 12, gy + 14 - Math.round(gprog * 12), '#f6c84c', 1);
+      ctx.restore();
+    }
+
     ASSETS.drawText(ctx, '[C] EQUIP  [I] INV  [Q] QUESTS', STRIP_X, STRIP_Y + 16, PAL.gray, 1);
   }
 
   // -------------------------- tracker de quest (4.1) --------------------------
   // Canto superior direito, discreto: título + a descrição do objetivo (o que
   // fazer), com o progresso numérico quando o objetivo não é tudo-ou-nada.
-  // Destaque dourado breve ao concluir, mesmo padrão de tempo
-  // (CONFIG.UNLOCK_MSG_TIME) das mensagens de desbloqueio.
+  // Quando o objetivo é atingido, a quest não conclui sozinha: o tracker pulsa
+  // convidando o clique (Quests.isReady()) e só aplica a reward quando o
+  // jogador clica nele (ver o handler em `update`) — Quests.claim faz o
+  // destaque dourado breve de conclusão (CONFIG.UNLOCK_MSG_TIME).
   var TRACKER_MAX_W = 132;
-  function drawQuestTracker(ctx, world) {
+  function trackerLayout(world) {
     var q = Quests.activeQuest();
-    if (!q) return;
-    var prog = Quests.currentProgress(world);
-    var body = prog.binary ? q.description : q.description + '  ' + prog.current + '/' + prog.target;
-    var lines = wrapText(body, TRACKER_MAX_W, 1);
+    if (!q) return null;
+    var ready = Quests.isReady();
+    var lines;
+    if (ready) {
+      lines = wrapText('CONCLUIDA! CLIQUE PARA COLETAR', TRACKER_MAX_W, 1);
+    } else {
+      var prog = Quests.currentProgress(world);
+      var body = prog.binary ? q.description : q.description + '  ' + prog.current + '/' + prog.target;
+      lines = wrapText(body, TRACKER_MAX_W, 1);
+    }
     var w = TRACKER_MAX_W + 8, h = 12 + lines.length * 8 + 3;
-    var x = CONFIG.GAME_WIDTH - w - 4, y = 16;
+    return { x: CONFIG.GAME_WIDTH - w - 4, y: 16, w: w, h: h, lines: lines, title: q.title, ready: ready };
+  }
+
+  function drawQuestTracker(ctx, world) {
+    var lay = trackerLayout(world);
+    if (!lay) return;
     var flashing = Quests.flashTime() > 0;
-    ctx.fillStyle = flashing ? 'rgba(58,44,26,0.9)' : 'rgba(26,28,44,0.7)';
-    ctx.fillRect(x, y, w, h);
-    ASSETS.strokeRect(ctx, x, y, w, h, flashing ? PAL.bronze : 'rgba(139,155,180,0.35)');
-    ASSETS.drawText(ctx, q.title, x + 4, y + 3, flashing ? '#f6c84c' : PAL.bronze, 1);
-    for (var i = 0; i < lines.length; i++) {
-      ASSETS.drawText(ctx, lines[i], x + 4, y + 13 + i * 8, flashing ? '#f6c84c' : PAL.white, 1);
+    var blink = lay.ready && Math.floor(Date.now() / 300) % 2 === 0;
+    var gold = lay.ready || flashing;
+    ctx.fillStyle = blink ? 'rgba(90,68,20,0.95)' : gold ? 'rgba(58,44,26,0.9)' : 'rgba(26,28,44,0.7)';
+    ctx.fillRect(lay.x, lay.y, lay.w, lay.h);
+    ASSETS.strokeRect(ctx, lay.x, lay.y, lay.w, lay.h, gold ? '#f6c84c' : 'rgba(139,155,180,0.35)');
+    ASSETS.drawText(ctx, lay.title, lay.x + 4, lay.y + 3, gold ? '#f6c84c' : PAL.bronze, 1);
+    for (var i = 0; i < lay.lines.length; i++) {
+      ASSETS.drawText(ctx, lay.lines[i], lay.x + 4, lay.y + 13 + i * 8, gold ? '#fff2a0' : PAL.white, 1);
     }
   }
 

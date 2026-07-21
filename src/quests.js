@@ -108,22 +108,26 @@ var Quests = (function () {
   var activeId = null;
   var completed = {};   // id -> true
   var progress = 0;     // contador do objetivo ativo (só usado por COLLECT/DESTROY/SELL)
-  var flashTime = 0;    // s restantes do destaque de conclusão no tracker
+  var ready = false;    // objetivo já atingido, aguardando o jogador clicar no tracker pra coletar
+  var flashTime = 0;    // s restantes do destaque dourado após coletar
 
   function reset() {
     activeId = null;
     completed = {};
     progress = 0;
+    ready = false;
     flashTime = 0;
   }
 
   function start(id) {
     activeId = id;
     progress = 0;
+    ready = false;
   }
 
   function activeQuest() { return activeId ? QUEST_BY_ID[activeId] : null; }
   function isCompleted(id) { return !!completed[id]; }
+  function isReady() { return ready; }
   function byId(id) { return QUEST_BY_ID[id]; }
 
   // Ordem da cadeia a partir da primeira quest declarada, seguindo `next` —
@@ -153,21 +157,28 @@ var Quests = (function () {
 
   function applyReward(reward, world) {
     if (!reward) return;
-    if (reward.gold) { world.gold += reward.gold; HUD.notifyGold(); }
+    if (reward.gold) { world.gold += reward.gold; HUD.notifyGold(reward.gold); }
     if (reward.items) {
       for (var item in reward.items) world.addToInventory(item, reward.items[item]);
     }
     if (reward.modifiers) world.stats.setModifiers(world.stats.mods.concat(reward.modifiers));
   }
 
-  function complete(world) {
+  // Objetivo atingido: só marca "pronta pra coletar" — não aplica reward nem
+  // avança a cadeia ainda. Isso só acontece quando o jogador clica no tracker
+  // (ver HUD.claim/Quests.claim), pra dar tempo do highlight ser percebido.
+  function markReady() { ready = true; }
+
+  // Chamado pelo clique no tracker (hud.js) quando a quest ativa está pronta.
+  function claim(world) {
+    if (!ready || !activeId) return;
     var q = QUEST_BY_ID[activeId];
     completed[activeId] = true;
     applyReward(q.reward, world);
     flashTime = CONFIG.UNLOCK_MSG_TIME;
     world.showMessage('QUEST CONCLUIDA: ' + q.title.toUpperCase(), CONFIG.UNLOCK_MSG_TIME);
     if (q.next) start(q.next);
-    else { activeId = null; progress = 0; }
+    else { activeId = null; progress = 0; ready = false; }
   }
 
   // Chamado pelos sistemas existentes no ponto em que o efeito já acontece
@@ -175,19 +186,19 @@ var Quests = (function () {
   // bater com o objetivo da quest ativa no momento.
   function onEvent(type, payload, world) {
     var q = activeQuest();
-    if (!q || q.objective.type !== type) return;
+    if (!q || ready || q.objective.type !== type) return;
     var obj = q.objective, matcher = QUEST_MATCHERS[type];
     if (!matcher.matches(obj, payload)) return;
     progress += matcher.amount(payload);
-    if (progress >= matcher.target(obj)) complete(world);
+    if (progress >= matcher.target(obj)) markReady();
   }
 
   // GOLD é estado acumulado, não um evento pontual — conferido a cada frame.
-  // Também é aqui que o destaque do tracker se apaga com o tempo.
+  // Também é aqui que o destaque dourado pós-coleta se apaga com o tempo.
   function update(dt, world) {
     if (flashTime > 0) flashTime -= dt;
     var q = activeQuest();
-    if (q && q.objective.type === 'GOLD' && world.gold >= q.objective.amount) complete(world);
+    if (q && !ready && q.objective.type === 'GOLD' && world.gold >= q.objective.amount) markReady();
   }
 
   // { current, target, binary } pro tracker/log. binary = objetivo tudo-ou-
@@ -215,6 +226,8 @@ var Quests = (function () {
     reset: reset,
     onEvent: onEvent,
     update: update,
+    claim: claim,
+    isReady: isReady,
     activeQuest: activeQuest,
     isCompleted: isCompleted,
     isRecipeLocked: isRecipeLocked,
@@ -223,6 +236,6 @@ var Quests = (function () {
     markerBuildingId: markerBuildingId,
     byId: byId,
     flashTime: function () { return flashTime; },
-    debugState: function () { return { activeId: activeId, progress: progress, completed: completed }; }
+    debugState: function () { return { activeId: activeId, progress: progress, ready: ready, completed: completed }; }
   };
 })();
