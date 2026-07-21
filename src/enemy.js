@@ -31,6 +31,8 @@ function Enemy(type, x, y) {
   this.healthbarTime = 0;
   this.vx = 0;                  // velocidade de movimento
   this.vy = 0;
+  this.dir = 'down';            // 'up'|'down'|'left'|'right' — sprite é frontal (sem arte por
+                                 // direção), então só a esquerda/direita espelha (ver draw())
   this.deathParticles = [];     // partículas do despedaçamento
 
   // Vagar aleatório (ver updateWander): fase inicial sorteada por instância
@@ -172,6 +174,13 @@ Enemy.prototype.update = function (dt, world) {
       this.updateWander(dt);
     }
 
+    // Direção dominante define o lado do espelhamento em draw() — só
+    // atualiza quando realmente em movimento (parado mantém a última).
+    if (this.vx !== 0 || this.vy !== 0) {
+      if (Math.abs(this.vx) > Math.abs(this.vy)) this.dir = this.vx > 0 ? 'right' : 'left';
+      else this.dir = this.vy > 0 ? 'down' : 'up';
+    }
+
     this.moveAxis(this.vx * dt, 0, world.solids);
     this.moveAxis(0, this.vy * dt, world.solids);
   }
@@ -217,11 +226,14 @@ Enemy.prototype.draw = function (ctx) {
   var dx = Math.round(this.x - s.anchorX);
   var dy = Math.round(this.y - s.anchorY);
 
+  // Sprite é único (frontal) — 'up'/'down' usam o mesmo frame; 'left' espelha
+  // horizontalmente em torno da própria caixa (sem arte de perfil dedicada).
+  var flip = this.dir === 'left';
+  ctx.save();
+  if (flip) { ctx.translate(dx + s.w, dy); ctx.scale(-1, 1); dx = 0; dy = 0; }
   ctx.drawImage(frame, dx, dy);
-
-  if (this.flashTime > 0) {
-    ctx.drawImage(flashCanvasFor(frame), dx, dy);
-  }
+  if (this.flashTime > 0) ctx.drawImage(flashCanvasFor(frame), dx, dy);
+  ctx.restore();
 };
 
 Enemy.prototype.drawDeathParticles = function (ctx) {
