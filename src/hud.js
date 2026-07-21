@@ -1,6 +1,8 @@
 // hud.js — TODO o HUD: faixa mínima de recursos (sempre visível), painel de
 // EQUIPAMENTO + janela de STATUS colada (tecla C) e INVENTÁRIO com total de
-// gold (tecla I). Sem vida/stamina/orbes. Mantém os overlays de DEBUG.
+// gold (tecla I). Sem vida/stamina/orbes. Mantém os overlays de DEBUG, com um
+// botão no canto superior direito (só existe com CONFIG.DEBUG=true) pra
+// esconder/mostrar as linhas de colisão etc. sem precisar editar config.js.
 'use strict';
 
 var HUD = (function () {
@@ -10,11 +12,19 @@ var HUD = (function () {
   var statFlash = {};    // stat -> { from, to, t } destaque dourado
   var goldFlash = 0;     // destaque do total de gold ao vender
   var activePanel = null; // null | 'equipment' | 'inventory'
+  var debugVisible = true; // toggle em runtime do overlay de DEBUG (botão)
 
   var STRIP_X = 4, STRIP_Y = 4, SLOT_W = 30;
   function stripSlotX(i) { return STRIP_X + i * SLOT_W; }
   function pointInRect(p, r) {
     return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+  }
+
+  // Botão [DEBUG] no canto superior direito — liga/desliga o overlay em runtime.
+  var DEBUG_BTN_LABEL = 'DEBUG';
+  function debugBtnRect() {
+    var w = ASSETS.textWidth(DEBUG_BTN_LABEL, 1) + 8;
+    return { x: CONFIG.GAME_WIDTH - w - 4, y: 4, w: w, h: 10 };
   }
   // Itens com quantidade > 0 — itens zerados (ex.: drops de inimigo antes do
   // primeiro kill) não ocupam slot nem contam "0" na faixa/inventário.
@@ -56,6 +66,9 @@ var HUD = (function () {
     if (INPUT.wasPressed('KeyC')) setPanel(activePanel === 'equipment' ? null : 'equipment', world);
     if (INPUT.wasPressed('KeyI')) setPanel(activePanel === 'inventory' ? null : 'inventory', world);
     if (INPUT.wasPressed('Escape') && activePanel) activePanel = null;
+    if (CONFIG.DEBUG && INPUT.wasClicked() && pointInRect(INPUT.mouse, debugBtnRect())) {
+      debugVisible = !debugVisible;
+    }
   }
 
   // ------------------------------- draw ---------------------------------
@@ -281,8 +294,19 @@ var HUD = (function () {
     }
   }
 
+  function drawDebugToggleButton(ctx) {
+    var r = debugBtnRect();
+    ctx.fillStyle = debugVisible ? 'rgba(126,200,80,0.25)' : 'rgba(26,28,44,0.6)';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ASSETS.strokeRect(ctx, r.x, r.y, r.w, r.h, debugVisible ? PAL.leafLight : PAL.grayDark);
+    ASSETS.drawText(ctx, DEBUG_BTN_LABEL, r.x + 4, r.y + 3, debugVisible ? PAL.leafLight : PAL.gray, 1);
+  }
+
   // ---- Overlays de desenvolvimento (CONFIG.DEBUG) ----
   function drawDebug(ctx, world) {
+    drawDebugToggleButton(ctx);
+    if (!debugVisible) return;
+
     var t = CONFIG.TILE_SIZE;
     var cols = CONFIG.GAME_WIDTH / t, rows = CONFIG.GAME_HEIGHT / t;
     for (var c = 0; c < cols; c++) ASSETS.drawText(ctx, String(c), c * t + 2, 1, 'rgba(244,244,244,0.5)', 1);

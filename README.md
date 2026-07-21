@@ -31,7 +31,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 
 | Constante | Padrão | Efeito |
 |---|---|---|
-| `DEBUG` | `true` | Overlays de desenvolvimento (grade numerada, hitboxes, raio de coleta, coordenadas do jogador, timers de respawn) |
+| `DEBUG` | `true` | Overlays de desenvolvimento (grade numerada, hitboxes, raio de coleta, coordenadas do jogador, timers de respawn); com `true`, mostra um botão **DEBUG** no canto superior direito da tela pra ligar/desligar o overlay em runtime sem editar este arquivo |
 | `GAME_WIDTH` / `GAME_HEIGHT` | 480 / 270 | Resolução interna |
 | `SCALE` | 4 | Escala inteira de exibição (1920×1080) |
 | `TILE_SIZE` | 16 | Grid base em px |
