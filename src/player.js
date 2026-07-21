@@ -92,14 +92,14 @@ Player.prototype.update = function (dt, world) {
   this.targetIsEnemy = false;
   if (!forgeOpen) {
     var front = this.frontBox();
-    // Tenta atingir inimigos primeiro
-    if (world.enemies) {
+    // Tenta atingir inimigos primeiro (só com espada equipada)
+    if (world.enemies && world.equipment.slots.weapon === 'sword') {
       for (var i = 0; i < world.enemies.length; i++) {
         var e = world.enemies[i];
         if (e.alive && rectsOverlap(front, e.hurtbox())) {
           this.target = e;
           this.targetIsEnemy = true;
-          this.weapon = 'sword'; // só espada ataca inimigos
+          this.weapon = 'sword';
           break;
         }
       }
@@ -125,8 +125,8 @@ Player.prototype.update = function (dt, world) {
     if (this.hitCooldown <= 0) {
       var dmg = world.stats.get('damage');
       if (this.targetIsEnemy) {
-        // Inimigos só levam dano de espada (sem bônus de categoria)
-        this.target.takeHit(dmg, this.weapon, world);
+        // Inimigos só levam dano de espada
+        this.target.takeHit(dmg, 'sword', world);
       } else {
         // Harvestables: dano base + bônus de categoria
         var category = RESOURCE_TYPES[this.target.type].category;
