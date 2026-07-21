@@ -84,7 +84,7 @@
   function updateWorld(dt) {
     world.rebuildSolids();
     world.forge.handleInput();      // abrir/fechar forja + navegação (proximidade)
-    world.player.update(dt, world); // movimento bloqueado se a forja estiver aberta
+    world.player.update(dt, world); // ataque suspenso com a forja aberta; movimento livre (afastar-se fecha a janela)
 
     var i;
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].update(dt);

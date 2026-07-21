@@ -68,15 +68,11 @@ Player.prototype.moveAxis = function (dx, dy, solids) {
 };
 
 Player.prototype.update = function (dt, world) {
-  // Janela de forja aberta: movimento e ataque bloqueados (jogo segue ao fundo).
-  if (world.forge && world.forge.open) {
-    this.target = null;
-    if (this.hitCooldown > 0) this.hitCooldown -= dt;
-    if (this.attackAnimTime > 0) this.attackAnimTime -= dt;
-    this.setState('idle');
-    this.animTime += dt;
-    return;
-  }
+  // Janela de forja aberta: o jogador continua podendo se mover — é assim que
+  // "afastar-se fecha" funciona (a proximidade com o ferreiro é reavaliada a
+  // cada frame em Forge.handleInput). Só o ataque automático fica suspenso,
+  // para não coletar/atacar nada por engano com o menu na tela.
+  var forgeOpen = !!(world.forge && world.forge.open);
 
   var speed = world.stats.get('moveSpeed');
   var mv = INPUT.getMoveVector();
@@ -90,15 +86,18 @@ Player.prototype.update = function (dt, world) {
     this.moveAxis(0, mv.y * speed * dt, world.solids);
   }
 
-  // Objeto à frente -> arma automática + ataque automático (só de frente)
+  // Objeto à frente -> arma automática + ataque automático (só de frente,
+  // e só quando nenhuma janela de forja está cobrindo a tela)
   this.target = null;
-  var front = this.frontBox();
-  for (var i = 0; i < world.harvestables.length; i++) {
-    var h = world.harvestables[i];
-    if (h.alive && rectsOverlap(front, h.hurtbox())) {
-      this.target = h;
-      this.weapon = WEAPON_FOR_CATEGORY[RESOURCE_TYPES[h.type].category] || null;
-      break;
+  if (!forgeOpen) {
+    var front = this.frontBox();
+    for (var i = 0; i < world.harvestables.length; i++) {
+      var h = world.harvestables[i];
+      if (h.alive && rectsOverlap(front, h.hurtbox())) {
+        this.target = h;
+        this.weapon = WEAPON_FOR_CATEGORY[RESOURCE_TYPES[h.type].category] || null;
+        break;
+      }
     }
   }
 
