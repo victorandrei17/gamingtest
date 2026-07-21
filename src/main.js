@@ -55,9 +55,11 @@
       var b = LEVEL.buildings[i];
       w.buildings.push(new Building(b.type, b.x, b.y));
     }
-    for (i = 0; i < LEVEL.enemies.length; i++) {
-      var e = LEVEL.enemies[i];
-      w.enemies.push(new Enemy(e.type, e.x, e.y));
+    if (LEVEL.enemies) {
+      for (i = 0; i < LEVEL.enemies.length; i++) {
+        var e = LEVEL.enemies[i];
+        w.enemies.push(new Enemy(e.type, e.x, e.y));
+      }
     }
     w.forge = new Forge(w); // interação com o ferreiro + janela de forja
 
