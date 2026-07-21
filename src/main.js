@@ -26,6 +26,7 @@
       player: new Player(character, LEVEL.playerStart.x, LEVEL.playerStart.y),
       harvestables: [],
       buildings: [],
+      enemies: [],
       drops: [],
       particles: [],
       pops: [],
@@ -40,7 +41,12 @@
     w.equipment = new Equipment(w.stats);
 
     var i;
-    for (i = 0; i < INVENTORY_ORDER.length; i++) w.inventory[INVENTORY_ORDER[i]] = CONFIG.START_INVENTORY_QTY;
+    // Inicializa inventário com recursos coletáveis (exclui drops de inimigos)
+    var collectibles = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece'];
+    for (i = 0; i < collectibles.length; i++) w.inventory[collectibles[i]] = CONFIG.START_INVENTORY_QTY;
+    for (i = 0; i < INVENTORY_ORDER.length; i++) {
+      if (!w.inventory[INVENTORY_ORDER[i]]) w.inventory[INVENTORY_ORDER[i]] = 0;
+    }
     for (i = 0; i < LEVEL.objects.length; i++) {
       var o = LEVEL.objects[i];
       w.harvestables.push(new Harvestable(o.type, o.x, o.y));
@@ -48,6 +54,10 @@
     for (i = 0; i < LEVEL.buildings.length; i++) {
       var b = LEVEL.buildings[i];
       w.buildings.push(new Building(b.type, b.x, b.y));
+    }
+    for (i = 0; i < LEVEL.enemies.length; i++) {
+      var e = LEVEL.enemies[i];
+      w.enemies.push(new Enemy(e.type, e.x, e.y));
     }
     w.forge = new Forge(w); // interação com o ferreiro + janela de forja
 
@@ -77,6 +87,9 @@
         var sb = w.buildings[j].solidBox();
         if (sb) w.solids.push(sb);
       }
+      for (j = 0; j < w.enemies.length; j++) {
+        if (w.enemies[j].alive) w.solids.push(w.enemies[j].solidBox());
+      }
     };
     return w;
   }
@@ -89,6 +102,10 @@
     var i;
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].update(dt);
     for (i = 0; i < world.buildings.length; i++) world.buildings[i].update(dt, world.player, world);
+    for (i = world.enemies.length - 1; i >= 0; i--) {
+      world.enemies[i].update(dt, world);
+      if (world.enemies[i].state === 'dead') world.enemies.splice(i, 1);
+    }
     for (i = world.drops.length - 1; i >= 0; i--) {
       world.drops[i].update(dt, world.player, world);
       if (world.drops[i].dead) world.drops.splice(i, 1);
@@ -124,17 +141,25 @@
       var b = world.buildings[i];
       entities.push({ y: b.y + b.def.height / 2, e: b });
     }
+    for (i = 0; i < world.enemies.length; i++) {
+      entities.push({ y: world.enemies[i].y, e: world.enemies[i] });
+    }
     entities.push({ y: world.player.y, e: world.player });
     entities.sort(function (a, b2) { return a.y - b2.y; });
     for (i = 0; i < entities.length; i++) {
       var e = entities[i].e;
       if (e instanceof Building) e.draw(ctx, time);
+      else if (e instanceof Enemy) e.draw(ctx);
       else e.draw(ctx);
     }
 
     for (i = 0; i < world.particles.length; i++) world.particles[i].draw(ctx);
     for (i = 0; i < world.pops.length; i++) world.pops[i].draw(ctx);
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].drawHealthbar(ctx);
+    for (i = 0; i < world.enemies.length; i++) {
+      world.enemies[i].drawHealthbar(ctx);
+      world.enemies[i].drawDeathParticles(ctx);
+    }
     world.forge.drawPrompt(ctx);   // [E] FORJAR sobre a casa (espaço do mundo)
 
     HUD.draw(ctx, world);

@@ -59,5 +59,11 @@ var CONFIG = {
   // HUD / painel de personagem
   HUD_PULSE_TIME: 0.25,      // s do pulso do contador ao coletar
   FLOAT_TEXT_TIME: 0.8,      // s do "+1" flutuante ao coletar
-  STAT_FLASH_TIME: 1.5       // s do destaque dourado ao ganhar um bônus
+  STAT_FLASH_TIME: 1.5,      // s do destaque dourado ao ganhar um bônus
+
+  // Inimigos
+  ENEMY_SPEED: 45,           // px/s (50% de PLAYER_SPEED)
+  ENEMY_VISION_RADIUS: 120,  // px — distância para detectar o jogador
+  ENEMY_HP: 3,               // vida dos inimigos
+  ENEMY_IDLE_ANIM_SPEED: 4   // frames/s da animação de idle
 };

@@ -9,9 +9,10 @@ var ITEM_TYPES = {
   wood:        { name: 'Madeira' },
   iron_ore:    { name: 'Minério de Ferro' },
   bronze_ore:  { name: 'Minério de Bronze' },
-  stone_piece: { name: 'Pedra' }
+  stone_piece: { name: 'Pedra' },
+  geleia_rosa: { name: 'Geléia Rosa' }
 };
-var INVENTORY_ORDER = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece'];
+var INVENTORY_ORDER = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece', 'geleia_rosa'];
 
 // Armas: que categoria de alvo cada uma atinge.
 // Para adicionar uma arma nova: nova entrada aqui + sprite em assets.js
@@ -78,3 +79,8 @@ var EQUIP_SLOTS = {
   ring:    { label: 'ANEL',     removable: true }
 };
 var EQUIP_SLOT_ORDER = ['weapon', 'boot', 'axe', 'pickaxe', 'chest', 'ring'];
+
+// Inimigos (Milestone 3)
+var ENEMY_TYPES = {
+  poring: { name: 'Geléia Rosa', hp: CONFIG.ENEMY_HP }
+};

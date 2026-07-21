@@ -25,5 +25,12 @@ var LEVEL = {
   // x,y = centro da área de construção.
   buildings: [
     { type: 'blacksmith', x: 400, y: 40 }
+  ],
+
+  // Inimigos: type referencia ENEMY_TYPES (data.js).
+  // x,y = centro da base (pés) do inimigo.
+  enemies: [
+    { type: 'poring', x: 350, y: 150 },
+    { type: 'poring', x: 150, y: 100 }
   ]
 };

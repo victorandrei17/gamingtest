@@ -389,6 +389,11 @@ var ASSETS = (function () {
       stone_piece: createItem(function (ctx) {
         px(ctx, PAL.grayDark, 1, 2, 6, 5);
         px(ctx, PAL.gray, 2, 3, 4, 3);
+      }),
+      geleia_rosa: createItem(function (ctx) {
+        px(ctx, PAL.pink, 2, 2, 4, 4);
+        px(ctx, '#e06ac0', 1, 3, 6, 4);
+        px(ctx, '#f4a8d8', 3, 3, 2, 1);
       })
     };
   }
@@ -620,6 +625,37 @@ var ASSETS = (function () {
   }
 
   // ------------------------------------------------------------------
+  // Inimigos — Geléia Rosa (Poring). 16x16 px, âncora no centro (8,8).
+  // Animação: 2 frames de movimento oscilante.
+  // ------------------------------------------------------------------
+  function drawPoringFrame(ctx, bob) {
+    // Corpo principal (blob)
+    px(ctx, PAL.pink, 4, 5 + bob, 8, 6);
+    px(ctx, '#e06ac0', 3, 6 + bob, 10, 4);
+    px(ctx, '#d6589c', 4, 4 + bob, 1, 1);
+    px(ctx, '#d6589c', 11, 4 + bob, 1, 1);
+
+    // Brilho (destaque)
+    px(ctx, '#f4a8d8', 6, 5 + bob, 2, 1);
+
+    // Olhinhos
+    px(ctx, PAL.black, 5, 8 + bob, 1, 1);
+    px(ctx, PAL.black, 10, 8 + bob, 1, 1);
+  }
+
+  function createEnemySprites() {
+    var idle = [];
+    for (var i = 0; i < 2; i++) {
+      var m = makeCanvas(16, 16);
+      drawPoringFrame(m.ctx, i === 0 ? 0 : 1);
+      idle.push(m.canvas);
+    }
+    return {
+      poring: { idle: idle, w: 16, h: 16, anchorX: 8, anchorY: 8 }
+    };
+  }
+
+  // ------------------------------------------------------------------
   // Partículas simples: cor por categoria de recurso.
   // ------------------------------------------------------------------
   var PARTICLE_COLORS = {
@@ -639,7 +675,7 @@ var ASSETS = (function () {
     particleColors: PARTICLE_COLORS,
     playerSize: { w: PLAYER_W, h: PLAYER_H },
     ground: null, players: null, resources: null,
-    items: null, weaponIcons: null, forgeIcons: null, buildings: null,
+    items: null, weaponIcons: null, forgeIcons: null, buildings: null, enemies: null,
     init: function () {
       api.ground = createGround();
       api.players = { boy: createPlayerSet(PAL.blue), girl: createPlayerSet(PAL.pink) };
@@ -648,6 +684,7 @@ var ASSETS = (function () {
       api.weaponIcons = createWeaponIcons();
       api.forgeIcons = createForgeIcons();
       api.buildings = { blacksmith: createBlacksmith() };
+      api.enemies = createEnemySprites();
       if (CONFIG.USE_REAL_ROCK_SPRITES) loadRealStageSprites();
     }
   };
