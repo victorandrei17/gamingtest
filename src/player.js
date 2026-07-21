@@ -24,17 +24,20 @@ Player.prototype.hitbox = function () {
   };
 };
 
-// Caixa de alcance do golpe: estende a hitbox SÓ na direção que o jogador
-// encara. Assim o ataque só acontece quando ele está de frente para o objeto.
+// Caixa de alcance do golpe: um retângulo (comprimento hb.w+reach x espessura
+// hb.h) que aponta na direção que o jogador encara — mesmo tamanho nas duas
+// orientações, só girado 90° pra vertical (senão sairia maior num eixo que
+// no outro, já que o hitbox em si não é quadrado).
 Player.prototype.frontBox = function () {
   var hb = this.hitbox();
   var r = CONFIG.PLAYER_REACH;
-  var b = { x: hb.x, y: hb.y, w: hb.w, h: hb.h };
-  if (this.dir === 'left')       { b.x -= r; b.w += r; }
-  else if (this.dir === 'right') { b.w += r; }
-  else if (this.dir === 'up')    { b.y -= r; b.h += r; }
-  else                           { b.h += r; } // down
-  return b;
+  var len = hb.w + r;   // comprimento na direção do golpe (igual nas duas orientações)
+  var cross = hb.h;     // espessura perpendicular (igual nas duas orientações)
+  if (this.dir === 'left')  return { x: hb.x - r, y: hb.y, w: len, h: cross };
+  if (this.dir === 'right') return { x: hb.x, y: hb.y, w: len, h: cross };
+  var cx = hb.x + (hb.w - cross) / 2; // centraliza a espessura sob o hitbox
+  if (this.dir === 'up')    return { x: cx, y: hb.y - r, w: cross, h: len };
+  return { x: cx, y: hb.y, w: cross, h: len }; // down
 };
 
 function rectsOverlap(a, b) {

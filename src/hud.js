@@ -323,6 +323,18 @@ var HUD = (function () {
     var fb = world.player.frontBox();
     ctx.strokeStyle = 'rgba(232,160,60,0.9)';
     ctx.strokeRect(fb.x + 0.5, fb.y + 0.5, fb.w - 1, fb.h - 1);
+    // Hurtbox dos objetos atingíveis: mesma cor laranja da frontBox — quando
+    // as duas se sobrepõem é exatamente o instante em que o ataque dispara.
+    for (var m = 0; m < world.harvestables.length; m++) {
+      if (!world.harvestables[m].alive) continue;
+      var hhb = world.harvestables[m].hurtbox();
+      ctx.strokeRect(hhb.x + 0.5, hhb.y + 0.5, hhb.w - 1, hhb.h - 1);
+    }
+    for (var n = 0; n < world.enemies.length; n++) {
+      if (!world.enemies[n].alive) continue;
+      var ehb = world.enemies[n].hurtbox();
+      ctx.strokeRect(ehb.x + 0.5, ehb.y + 0.5, ehb.w - 1, ehb.h - 1);
+    }
     ctx.strokeStyle = 'rgba(126,200,80,0.6)';
     ctx.beginPath();
     ctx.arc(world.player.x, world.player.y - 8, CONFIG.COLLECT_RADIUS, 0, Math.PI * 2);
