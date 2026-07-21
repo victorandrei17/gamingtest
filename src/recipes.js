@@ -17,7 +17,8 @@ var RECIPES = [
     icon: 'sword',
     cost: { wood: 2, iron_ore: 2 },
     time: CONFIG.FORGE_TIME,
-    modifiers: [{ stat: 'damage', type: 'flat', value: 1 }]
+    modifiers: [{ stat: 'damage', type: 'flat', value: 1 }],
+    desc: 'Lamina afiada de ferro que aumenta o dano dos seus golpes.'
   },
   {
     id: 'boot',
@@ -26,7 +27,8 @@ var RECIPES = [
     icon: 'boot',
     cost: { wood: 3 },
     time: CONFIG.FORGE_TIME,
-    modifiers: [{ stat: 'moveSpeed', type: 'percent', value: 0.20 }]
+    modifiers: [{ stat: 'moveSpeed', type: 'percent', value: 0.20 }],
+    desc: 'Botas resistentes de madeira que deixam voce mais rapido.'
   }
 ];
 

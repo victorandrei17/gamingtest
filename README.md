@@ -57,6 +57,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `SMITH_INTERACT_RADIUS` | 34 | Proximidade (px) para exibir `[E] FORJAR` |
 | `DENY_FLASH_TIME` | 0.3 | Feedback de negação ao tentar forjar sem recursos |
 | `GOLD_PER_ITEM` | 3 | Gold recebido ao vender 1 coletável (fixo para todos) |
+| `FORGE_STRIKE_PERIOD` | 0.3 | Segundos entre marteladas na bigorna (animação de forja) |
 | `HUD_PULSE_TIME` | 0.25 | Duração do pulso do contador do HUD ao coletar |
 | `FLOAT_TEXT_TIME` | 0.8 | Duração do `+1` flutuante ao coletar |
 | `STAT_FLASH_TIME` | 1.5 | Duração do destaque dourado ao ganhar um bônus |
@@ -111,13 +112,14 @@ Formato de uma **receita** (`recipes.js`):
 
 ```js
 {
-  id: 'sword',                 // referência única / slot de equipamento via `slot`
+  id: 'sword',                 // referência única
   name: 'Espada',
-  slot: 'sword',
-  icon: 'sword',               // chave em ASSETS.forgeIcons
+  slot: 'weapon',               // slot de equipamento (EQUIP_SLOTS em data.js)
+  icon: 'sword',                // chave em ASSETS.forgeIcons
   cost: { wood: 2, iron_ore: 2 },
-  time: CONFIG.FORGE_TIME,     // segundos de forja
-  modifiers: [{ stat: 'damage', type: 'flat', value: 1 }]
+  time: CONFIG.FORGE_TIME,      // segundos de forja
+  modifiers: [{ stat: 'damage', type: 'flat', value: 1 }],
+  desc: 'Lamina afiada de ferro que aumenta o dano dos seus golpes.' // coluna DESCRICAO da bancada
 }
 ```
 
@@ -134,12 +136,24 @@ são **permanentes** (`removable:false`, só recebem upgrade); `chest` e `ring` 
 `equipment.owned` guarda tudo já forjado, então um item removido pode ser reequipado.
 
 O ferreiro (tecla `E`) tem duas abas: **FORJAR** e **VENDER**. Na venda, cada
-coletável vale `CONFIG.GOLD_PER_ITEM` gold (fixo). O gold acumula em `world.gold` e
-aparece no rodapé do inventário — reservado para revelar novas áreas no próximo passo.
+coletável vale `CONFIG.GOLD_PER_ITEM` gold (fixo), e só itens com quantidade > 0
+aparecem na lista (`Forge.sellList()`). O gold acumula em `world.gold` e aparece
+no rodapé do inventário e no rodapé da janela do ferreiro — reservado para revelar
+novas áreas no próximo passo.
+
+A aba **FORJAR** é uma bancada em 3 colunas (`Forge.drawCraft` em `forge.js`):
+esquerda com a grade de itens forjáveis (ícone por receita, selecionável por mouse
+ou teclado); meio-topo com uma grade 3×3 dos ingredientes da receita selecionada
+(preenche as primeiras N células, com quantidade colorida verde/vermelha);
+meio-base com o botão **FORJAR** e uma bigorna desenhada em `Forge.drawAnvil` — ao
+confirmar, uma marreta bate no ritmo de `CONFIG.FORGE_STRIKE_PERIOD` soltando
+faíscas (`Forge.spawnSparks`) enquanto a barra de progresso avança; direita com a
+descrição do item (ícone, nome, efeito e texto livre via `recipe.desc`).
 
 **Controles:** `[C]` equipamento + status, `[I]` inventário (com total de gold),
-`[E]` ferreiro (forjar/vender) perto da casa, `ESC` fecha, mouse+teclado nas janelas.
-Equipamento, inventário e ferreiro são mutuamente exclusivos (abrir um fecha os outros).
+`[E]` ferreiro (forjar/vender) perto da estação, `ESC` fecha, mouse+teclado nas
+janelas. Equipamento, inventário e ferreiro são mutuamente exclusivos (abrir um
+fecha os outros).
 
 ## Sprites a substituir (`src/assets.js`)
 
@@ -153,7 +167,7 @@ de `assets.js` por carregamento de imagens mantendo a interface `ASSETS.*`:
 | **Rochas de bronze, ferro e pedra (5 estágios de dano)** | 24×20, âncora (12,19) | 5 frames do maior (5 HP) ao menor (1 HP) + quebrada, por tipo |
 | Itens/ícones (madeira, minérios, pedra) | 8×8 | 1 (usado no chão e no HUD) |
 | Ícones de arma (machado, picareta) | 10×10 | 1 |
-| Casa do Ferreiro | 48×40, âncora (24,39) | construída (a "subida" é recorte progressivo do mesmo sprite) |
+| Estação do Ferreiro (fornalha + bigorna) | 56×44, âncora (28,43) | construída (a "subida" é recorte progressivo do mesmo sprite) |
 | Chão | 480×270 (ou tileset 16×16) | o xadrez de dev é gerado em `createGround()` — troque só essa função |
 
 O texto usa uma fonte bitmap 3×5 embutida (`ASSETS.drawText`) para ficar sem antialias.

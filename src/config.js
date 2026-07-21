@@ -51,6 +51,7 @@ var CONFIG = {
   SMITH_INTERACT_RADIUS: 34, // px de proximidade para exibir [E] FORJAR
   DENY_FLASH_TIME: 0.3,      // s do feedback de negação (recurso insuficiente)
   GOLD_PER_ITEM: 3,          // gold recebido ao vender 1 coletável (fixo p/ todos)
+  FORGE_STRIKE_PERIOD: 0.3,  // s entre marteladas na bigorna (animação de forja)
 
   // HUD / painel de personagem
   HUD_PULSE_TIME: 0.25,      // s do pulso do contador ao coletar
