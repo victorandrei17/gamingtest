@@ -38,7 +38,8 @@ var RECIPES = [
     cost: { bronze_ore: 2 },
     time: CONFIG.FORGE_TIME,
     modifiers: [{ stat: 'damageTree', type: 'flat', value: 1 }],
-    desc: 'Machado com lamina de bronze. Da dano extra contra arvores.'
+    desc: 'Machado com lamina de bronze. Da dano extra contra arvores.',
+    locked: true // desbloqueada pela quest 'forge_sword' (ver quests.js)
   },
   {
     id: 'bronze_pickaxe',

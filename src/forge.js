@@ -40,8 +40,9 @@ Forge.prototype.canAfford = function (recipe) {
   return true;
 };
 
-// 'forged' | 'busy' | 'insufficient' | 'ready'.
+// 'locked' | 'forged' | 'busy' | 'insufficient' | 'ready'.
 Forge.prototype.recipeState = function (recipe) {
+  if (Quests.isRecipeLocked(recipe.id)) return 'locked';
   if (this.world.equipment.owns(recipe.id)) return 'forged';
   if (this.active) return 'busy';
   if (!this.canAfford(recipe)) return 'insufficient';
@@ -82,6 +83,7 @@ Forge.prototype.sellSelected = function () {
   this.world.inventory[item] -= 1;
   this.world.gold += CONFIG.GOLD_PER_ITEM;
   HUD.notifyGold();
+  Quests.onEvent('SELL', { item: item, amount: 1 }, this.world);
   var n = this.sellList().length;
   if (this.selected >= n) this.selected = Math.max(0, n - 1);
 };
@@ -156,6 +158,7 @@ Forge.prototype.update = function (dt) {
   this.world.equipment.equip(r.id);
   for (var stat in before) HUD.flashStat(stat, before[stat], this.world.stats.display(stat));
   this.world.showMessage(r.name.toUpperCase() + ' FORJADA', CONFIG.UNLOCK_MSG_TIME);
+  Quests.onEvent('FORGE', { recipeId: r.id }, this.world);
   this.active = null;
 };
 
@@ -300,8 +303,9 @@ Forge.prototype.drawCraft = function (ctx, lay) {
     if (sl.index != null) {
       var rec = RECIPES[sl.index];
       var owned = this.world.equipment.owns(rec.id);
+      var locked = Quests.isRecipeLocked(rec.id);
       ctx.save();
-      if (owned) ctx.globalAlpha = 0.4;
+      if (owned || locked) ctx.globalAlpha = 0.4;
       ctx.drawImage(ASSETS.forgeIcons[rec.icon], rc.x + (rc.w - 12) / 2, rc.y + (rc.h - 12) / 2);
       ctx.restore();
       if (sl.index === this.selected) ASSETS.strokeRect(ctx, rc.x, rc.y, rc.w, rc.h, PAL.bronze);
@@ -326,8 +330,8 @@ Forge.prototype.drawCraft = function (ctx, lay) {
   // Botão FORJAR.
   var btn = lay.forgeButton;
   var canForge = state === 'ready';
-  var btnLabel = state === 'forged' ? 'JA FORJADO' : state === 'busy' ? 'FORJANDO...' :
-                 state === 'insufficient' ? 'SEM RECURSOS' : 'FORJAR';
+  var btnLabel = state === 'locked' ? 'BLOQUEADO' : state === 'forged' ? 'JA FORJADO' :
+                 state === 'busy' ? 'FORJANDO...' : state === 'insufficient' ? 'SEM RECURSOS' : 'FORJAR';
   ctx.fillStyle = canForge ? '#2e5339' : '#241f2e';
   ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
   ASSETS.strokeRect(ctx, btn.x, btn.y, btn.w, btn.h,

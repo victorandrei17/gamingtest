@@ -78,6 +78,7 @@ src/data.js         tabelas ITEM_TYPES, RESOURCE_TYPES, WEAPON_TYPES, BUILDINGS
 src/level.js        posições declarativas dos objetos e construções
 src/stats.js        atributos base + modificadores + valor final (stats.get)
 src/recipes.js      receitas forjáveis declarativas (RECIPES)
+src/quests.js       cadeia de quests declarativa (QUESTS) + motor de progresso/reward
 src/equipment.js    itens equipados → injeta modificadores em stats
 src/assets.js       TODA a arte (procedural) — única camada a trocar por sprites reais
 src/input.js        teclado (vetor normalizado nas diagonais) + mouse
@@ -91,7 +92,8 @@ src/hud.js          faixa de recursos + painel de personagem + mensagens + DEBUG
 src/main.js         bootstrap, cena de seleção, mundo, game loop com dt
 ```
 
-Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no console.
+Com `DEBUG = true`, `window.GAME` expõe `scene`, `world` e `quests` (id da quest
+ativa, progresso e mapa de concluídas) para inspeção no console.
 
 ### Como estender (editando só dados)
 
@@ -109,6 +111,8 @@ Com `DEBUG = true`, `window.GAME` expõe `scene` e `world` para inspeção no co
   (`ASSETS.particleColors[type]` define as cores) ao concluir.
 - **Nova receita de forja**: uma entrada em `RECIPES` (`recipes.js`) + ícone em
   `ASSETS.forgeIcons` — a janela de forja, o custo e o equipamento se adaptam sozinhos.
+- **Nova quest**: uma entrada em `QUESTS` (`quests.js`), apontando `next` para
+  encadear — tracker, log (`Q`) e reward se adaptam sozinhos (ver seção abaixo).
 
 ### Expansão de mapa ("ilha")
 
@@ -200,9 +204,70 @@ faíscas (`Forge.spawnSparks`) enquanto a barra de progresso avança; direita co
 descrição do item (ícone, nome, efeito e texto livre via `recipe.desc`).
 
 **Controles:** `[C]` equipamento + status, `[I]` inventário (com total de gold),
-`[E]` ferreiro (forjar/vender) perto da estação, `ESC` fecha, mouse+teclado nas
-janelas. Equipamento, inventário e ferreiro são mutuamente exclusivos (abrir um
-fecha os outros).
+`[Q]` log de quests, `[E]` ferreiro (forjar/vender) perto da estação, `ESC` fecha,
+mouse+teclado nas janelas. Equipamento, inventário, quests e ferreiro são
+mutuamente exclusivos (abrir um fecha os outros).
+
+### Sistema de quests (Milestone 3)
+
+Cadeia tutorial 100% declarativa (`src/quests.js`), no mesmo espírito de
+`RECIPES`/`BUILDINGS`: uma quest ativa por vez, cada uma apontando a próxima via
+`next`. As quests **observam** eventos que os outros sistemas já disparam —
+nenhum deles foi reestruturado, cada um só ganhou uma chamada a `Quests.onEvent`
+no ponto em que o efeito já acontecia (destruição em `harvestable.js`, coleta em
+`drops.js`, construção concluída em `building.js`, forja e venda em `forge.js`).
+`GOLD` é a exceção: como é estado acumulado (não um evento pontual), é conferido
+a cada frame por `Quests.update`, chamado de `main.js` junto do resto do loop.
+
+Formato de uma quest:
+
+```js
+{
+  id: 'first_wood',
+  title: 'Primeiros Passos',
+  description: 'Colete 3 madeiras.',
+  objective: { type: 'COLLECT', item: 'wood', amount: 3 },
+  reward: { gold: 10 },
+  next: 'build_smith'          // id da próxima quest da cadeia, ou null no fim
+}
+```
+
+Tipos de objetivo (`objective.type`), cada um resolvido por uma entrada em
+`QUEST_MATCHERS` — adicionar um tipo novo é só uma entrada nessa tabela:
+
+| Tipo | Campos | Conta contra |
+|---|---|---|
+| `COLLECT` | `item`, `amount` | quantidade **ganha** desde o início da quest (não o total do inventário — não completa sozinha por causa do estoque de `START_INVENTORY_QTY`) |
+| `DESTROY` | `category` ou `resourceId`, `amount` | harvestables destruídos |
+| `BUILD` | `buildingId` | construção concluída |
+| `FORGE` | `recipeId` | forja concluída |
+| `SELL` | `item` (ou `'any'`), `amount` | itens vendidos na aba VENDER |
+| `GOLD` | `amount` | `world.gold` acumulado |
+
+`reward` aceita, todos opcionais: `gold` (soma a `world.gold`), `items`
+(`{ itemId: quantidade }`, soma ao inventário), `modifiers` (lista
+`{ stat, type, value }`, empurrada para `stats.setModifiers` — mesmo formato de
+`RECIPES.modifiers`) e `unlockRecipe` (id de receita). Uma receita com
+`locked: true` em `recipes.js` (ex.: `bronze_axe`) fica esmaecida e bloqueada na
+bancada (`Forge.recipeState` retorna `'locked'`) até que alguma quest concluída
+liste esse id em `reward.unlockRecipe` (`Quests.isRecipeLocked`) — sem precisar
+mutar `RECIPES` em runtime.
+
+**UI:** tracker discreto no canto superior direito (título + progresso, ou só o
+título nos objetivos tudo-ou-nada) com um destaque dourado breve ao concluir
+(mesmo padrão de `CONFIG.UNLOCK_MSG_TIME` das mensagens de desbloqueio); log
+completo em `[Q]`, na mesma moldura (`ASSETS.drawPanel`) do equipamento/inventário,
+listando concluídas (marcadas), a ativa (com progresso e descrição) e as
+próximas da cadeia esmaecidas (só o título, sem revelar o objetivo); e um
+marcador pulsante (`!`) sobre a construção-alvo quando ela ainda não foi
+concluída (`Quests.markerBuildingId` — direto da quest para `BUILD`, ou via o
+campo opcional `markerBuilding` para objetivos que não são `BUILD`, como a
+quest final apontando para a ilha).
+
+Cadeia atual: coletar madeira → construir o Ferreiro → forjar a Espada
+(desbloqueia o Machado de Bronze) → vender 5 itens → acumular gold — guiando o
+jogador até a expansão da ilha, que já existia no código mas não tinha nenhum
+gancho narrativo até agora.
 
 ## Sprites a substituir (`src/assets.js`)
 
@@ -244,24 +309,35 @@ Os nomes dos arquivos ficam em `REAL_STAGE_FILES` (`assets.js`) — ajuste ali s
 seus arquivos tiverem outros nomes. São carregados por cima dos placeholders
 (`loadRealStageSprites()`); se algum faltar, o placeholder daquele estágio permanece.
 
-## Pronto para o Milestone 3
+## Pronto para o Milestone 4
 
+- **Quests repetíveis**: o motor (`Quests.onEvent`/`complete`) hoje assume uma
+  cadeia linear (`completed[id]` fica `true` pra sempre); uma quest com um flag
+  `repeatable: true` poderia reiniciar (`progress = 0`) em vez de travar em
+  `completed`, sem mudar os pontos de evento já instrumentados.
+- **Encomendas do ferreiro como segunda camada**: o mesmo formato de objetivo
+  (`COLLECT`/`SELL`/`FORGE`) e o mesmo `QUEST_MATCHERS` servem para um quadro de
+  encomendas rotativo — só precisaria de uma fonte de quests diferente de
+  `QUESTS` (gerada/sorteada) alimentando o mesmo motor.
 - **Atributos data-driven**: novos atributos entram em `CONFIG` + `STAT_LABELS`;
   `stats.get()` já compõe `flat`/`percent` de qualquer fonte de modificadores.
 - **Modificadores genéricos**: qualquer sistema (poções, buffs temporários, níveis)
   pode empurrar `{ stat, type, value }` para `stats.setModifiers` sem tocar no resto.
 - **Receitas e equipamento declarativos**: novas forjas/slots = novas entradas em
-  `RECIPES`; a UI de forja e o painel se adaptam sozinhos.
+  `RECIPES`; a UI de forja e o painel se adaptam sozinhos. `locked: true` já dá
+  suporte a receitas gated por progresso (hoje usado pelas quests).
 - **Forja em background com uma fila de 1** — base pronta para múltiplas forjas/fila.
 - **Slots removíveis vs. permanentes** já modelados em `EQUIP_SLOTS`; peito/anel
   esperam apenas suas receitas para virem itens equipáveis.
-- **Economia de gold** pronta (`world.gold`, venda a `GOLD_PER_ITEM`) — reservada
-  para o desbloqueio/revelação de novas áreas.
+- **Economia de gold** pronta (`world.gold`, venda a `GOLD_PER_ITEM`) — já usada
+  pela quest final para guiar o jogador até a expansão da ilha.
 - **HUD centralizado** (`hud.js`) com painel modular (boneco, atributos, grade) e
-  primitivas de UI reutilizáveis (`ASSETS.drawPanel` / `drawSlot`).
-- **Tabelas de dados** de recursos, armas, construções e estágios de dano continuam
-  data-driven; novos tipos não exigem `if/else`.
-- **`window.GAME`** (modo DEBUG) para inspecionar/manipular o mundo em testes.
+  primitivas de UI reutilizáveis (`ASSETS.drawPanel` / `drawSlot`), incluindo
+  agora o tracker e o log de quests.
+- **Tabelas de dados** de recursos, armas, construções, receitas e quests
+  continuam data-driven; novos tipos não exigem `if/else`.
+- **`window.GAME`** (modo DEBUG) para inspecionar/manipular o mundo e as quests
+  em testes.
 
 > Observação de balanceamento: os objetos foram elevados a 5 HP (estágios de dano) a
 > pedido, então a Espada (`damage +1`) faz 2 de dano por hit em vez de derrubar uma

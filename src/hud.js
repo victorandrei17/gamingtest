@@ -65,6 +65,7 @@ var HUD = (function () {
     }
     if (INPUT.wasPressed('KeyC')) setPanel(activePanel === 'equipment' ? null : 'equipment', world);
     if (INPUT.wasPressed('KeyI')) setPanel(activePanel === 'inventory' ? null : 'inventory', world);
+    if (INPUT.wasPressed('KeyQ')) setPanel(activePanel === 'quests' ? null : 'quests', world);
     if (INPUT.wasPressed('Escape') && activePanel) activePanel = null;
     if (CONFIG.DEBUG && INPUT.wasClicked() && pointInRect(INPUT.mouse, debugBtnRect())) {
       debugVisible = !debugVisible;
@@ -75,8 +76,11 @@ var HUD = (function () {
   function draw(ctx, world) {
     PAL = ASSETS.palette;
     drawResourceStrip(ctx, world);
+    drawQuestTracker(ctx, world);
+    drawQuestMarker(ctx, world);
     if (activePanel === 'equipment') drawEquipmentPanel(ctx, world);
     else if (activePanel === 'inventory') drawInventoryPanel(ctx, world);
+    else if (activePanel === 'quests') drawQuestLog(ctx, world);
     drawMessage(ctx, world);
   }
 
@@ -102,7 +106,79 @@ var HUD = (function () {
       ASSETS.drawText(ctx, '+1', stripSlotX(idx) + 12, STRIP_Y + 14 - Math.round(prog * 12), PAL.leafLight, 1);
       ctx.restore();
     }
-    ASSETS.drawText(ctx, '[C] EQUIP  [I] INV', STRIP_X, STRIP_Y + 16, PAL.gray, 1);
+    ASSETS.drawText(ctx, '[C] EQUIP  [I] INV  [Q] QUESTS', STRIP_X, STRIP_Y + 16, PAL.gray, 1);
+  }
+
+  // -------------------------- tracker de quest (4.1) --------------------------
+  // Canto superior direito, discreto: título + progresso (ou só o título nos
+  // objetivos tudo-ou-nada). Destaque dourado breve ao concluir, mesmo
+  // padrão de tempo (CONFIG.UNLOCK_MSG_TIME) das mensagens de desbloqueio.
+  function drawQuestTracker(ctx, world) {
+    var q = Quests.activeQuest();
+    if (!q) return;
+    var prog = Quests.currentProgress(world);
+    var label = prog.binary ? q.title : q.title + '  ' + prog.current + '/' + prog.target;
+    var w = ASSETS.textWidth(label, 1) + 8;
+    var x = CONFIG.GAME_WIDTH - w - 4, y = 16;
+    var flashing = Quests.flashTime() > 0;
+    ctx.fillStyle = flashing ? 'rgba(58,44,26,0.9)' : 'rgba(26,28,44,0.6)';
+    ctx.fillRect(x, y, w, 10);
+    ASSETS.strokeRect(ctx, x, y, w, 10, flashing ? PAL.bronze : 'rgba(139,155,180,0.35)');
+    ASSETS.drawText(ctx, label, x + 4, y + 3, flashing ? '#f6c84c' : PAL.white, 1);
+  }
+
+  // -------------------------- marcador de objetivo (4.3) --------------------------
+  // Mapa é uma única tela, então basta um ícone pulsante sobre a construção
+  // alvo da quest ativa (some quando ela já está construída).
+  function drawQuestMarker(ctx, world) {
+    var buildingId = Quests.markerBuildingId();
+    if (!buildingId) return;
+    var target = null;
+    for (var i = 0; i < world.buildings.length; i++) {
+      if (world.buildings[i].type === buildingId) { target = world.buildings[i]; break; }
+    }
+    if (!target || target.state === 'built') return;
+    var bob = Math.round(Math.sin(Date.now() / 200) * 2);
+    var mx = Math.round(target.x), my = Math.round(target.y - target.def.height / 2 - 20 + bob);
+    ASSETS.drawText(ctx, '!', mx - 1, my, '#f6c84c', 2);
+    ctx.fillStyle = '#f6c84c';
+    ctx.beginPath();
+    ctx.moveTo(mx - 3, my + 12); ctx.lineTo(mx + 3, my + 12); ctx.lineTo(mx, my + 16);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // -------------------------- log de quests (4.2, tecla Q) --------------------------
+  // Mesma moldura de ASSETS.drawPanel usada no equipamento/forja. Lista a
+  // cadeia inteira na ordem de `next`: concluídas marcadas, a ativa com
+  // progresso, as futuras esmaecidas mostrando só o título (sem objetivo).
+  function drawQuestLog(ctx, world) {
+    var ids = Quests.chainOrder(), activeQ = Quests.activeQuest();
+    var w = 168, rowH = 13, headerH = 18, footerH = 12, descH = 9;
+    var h = headerH + ids.length * rowH + (activeQ ? descH : 0) + footerH;
+    var x = Math.round((CONFIG.GAME_WIDTH - w) / 2);
+    var y = Math.round((CONFIG.GAME_HEIGHT - h) / 2);
+    ASSETS.drawPanel(ctx, x, y, w, h);
+    var title = 'QUESTS';
+    ASSETS.drawText(ctx, title, x + Math.round((w - ASSETS.textWidth(title, 1)) / 2), y + 8, PAL.bronze, 1);
+
+    var ry = y + headerH;
+    for (var i = 0; i < ids.length; i++) {
+      var q = Quests.byId(ids[i]);
+      var done = Quests.isCompleted(q.id);
+      var active = !done && activeQ && ids[i] === activeQ.id;
+      var mark = done ? '[X] ' : active ? '[>] ' : '[ ] ';
+      var color = done ? PAL.leafLight : active ? PAL.white : PAL.grayDark;
+      var line = mark + q.title;
+      if (active) {
+        var prog = Quests.currentProgress(world);
+        if (!prog.binary) line += '  ' + prog.current + '/' + prog.target;
+      }
+      ASSETS.drawText(ctx, line, x + 8, ry + 3, color, 1);
+      ry += rowH;
+      if (active) { ASSETS.drawText(ctx, q.description, x + 16, ry + 3, PAL.gray, 1); ry += descH; }
+    }
+    var hint = '[Q]';
+    ASSETS.drawText(ctx, hint, x + w - ASSETS.textWidth(hint, 1) - 6, y + h - 10, PAL.gray, 1);
   }
 
   function drawMessage(ctx, world) {

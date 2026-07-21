@@ -51,6 +51,7 @@ Drop.prototype.update = function (dt, player, world) {
       this.dead = true;
       world.addToInventory(this.itemId, 1);
       world.spawnPop(this.x, this.y); // feedback visual de coleta
+      Quests.onEvent('COLLECT', { item: this.itemId, amount: 1 }, world);
     }
   }
 };

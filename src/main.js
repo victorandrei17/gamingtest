@@ -74,6 +74,8 @@
       }
     }
     w.forge = new Forge(w); // interação com o ferreiro + janela de forja
+    Quests.reset();
+    if (QUESTS.length) Quests.start(QUESTS[0].id); // ativa a primeira quest da cadeia
 
     w.addToInventory = function (itemId, n) {
       w.inventory[itemId] = (w.inventory[itemId] || 0) + n;
@@ -161,6 +163,7 @@
       if (world.messageTime <= 0) world.message = null;
     }
     world.forge.update(dt); // timer da forja: roda mesmo com a janela fechada
+    Quests.update(dt, world);
     HUD.update(dt, world);
   }
 
@@ -272,7 +275,8 @@
   if (CONFIG.DEBUG) {
     window.GAME = {
       get scene() { return scene; },
-      get world() { return world; }
+      get world() { return world; },
+      get quests() { return Quests.debugState(); }
     };
   }
 

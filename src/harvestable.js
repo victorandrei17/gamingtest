@@ -60,6 +60,7 @@ Harvestable.prototype.takeHit = function (dmg, world) {
     this.state = 'destroyed';
     this.timer = CONFIG.DEATH_FADE_TIME;
     world.spawnDrop(this.def.drops, this.x, this.y);
+    Quests.onEvent('DESTROY', { category: this.def.category, resourceId: this.type }, world);
   }
 };
 
