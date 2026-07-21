@@ -112,6 +112,11 @@ Forge.prototype.handleInput = function () {
   var lay = this.layout();
   if (pointInRect(INPUT.mouse, lay.tabForge) && INPUT.wasClicked()) this.setMode('forge');
   if (pointInRect(INPUT.mouse, lay.tabSell) && INPUT.wasClicked()) this.setMode('sell');
+  // Clicar numa aba troca this.mode acima — recalcula lay pro modo atual,
+  // senão o branch abaixo usa a forma errada (forge tem itemSlots, vender
+  // tem entries; cada uma só existe na sua própria layout) e quebra em
+  // "undefined.length".
+  lay = this.layout();
   if (this.mode === 'forge') {
     for (var i = 0; i < lay.itemSlots.length; i++) {
       var s = lay.itemSlots[i];
