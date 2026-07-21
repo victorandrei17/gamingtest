@@ -47,8 +47,17 @@ Forge.prototype.setMode = function (m) {
   if (this.mode !== m) { this.mode = m; this.selected = 0; }
 };
 
+// Itens vendáveis: só os que o jogador possui (quantidade > 0).
+Forge.prototype.sellList = function () {
+  var out = [];
+  for (var i = 0; i < INVENTORY_ORDER.length; i++) {
+    if ((this.world.inventory[INVENTORY_ORDER[i]] || 0) > 0) out.push(INVENTORY_ORDER[i]);
+  }
+  return out;
+};
+
 Forge.prototype.listLength = function () {
-  return this.mode === 'forge' ? RECIPES.length : INVENTORY_ORDER.length;
+  return this.mode === 'forge' ? RECIPES.length : this.sellList().length;
 };
 
 Forge.prototype.confirmSelected = function () {
@@ -64,11 +73,13 @@ Forge.prototype.confirmForge = function () {
 };
 
 Forge.prototype.sellSelected = function () {
-  var item = INVENTORY_ORDER[this.selected];
-  if ((this.world.inventory[item] || 0) <= 0) { this.deny(); return; }
+  var item = this.sellList()[this.selected];
+  if (!item || (this.world.inventory[item] || 0) <= 0) { this.deny(); return; }
   this.world.inventory[item] -= 1;
   this.world.gold += CONFIG.GOLD_PER_ITEM;
   HUD.notifyGold();
+  var n = this.sellList().length; // a lista pode encolher ao zerar um item
+  if (this.selected >= n) this.selected = Math.max(0, n - 1);
 };
 
 Forge.prototype.handleInput = function () {
@@ -85,8 +96,11 @@ Forge.prototype.handleInput = function () {
   if (INPUT.wasPressed('ArrowLeft'))  this.setMode('forge');
   if (INPUT.wasPressed('ArrowRight')) this.setMode('sell');
   var n = this.listLength();
-  if (INPUT.wasPressed('ArrowUp'))   this.selected = (this.selected - 1 + n) % n;
-  if (INPUT.wasPressed('ArrowDown')) this.selected = (this.selected + 1) % n;
+  if (n > 0) {
+    if (INPUT.wasPressed('ArrowUp'))   this.selected = (this.selected - 1 + n) % n;
+    if (INPUT.wasPressed('ArrowDown')) this.selected = (this.selected + 1) % n;
+  }
+  if (this.selected >= n) this.selected = Math.max(0, n - 1);
   if (INPUT.wasPressed('Enter') || INPUT.wasPressed('Space')) this.confirmSelected();
 
   // Mouse: abas + entradas.
@@ -116,19 +130,21 @@ Forge.prototype.update = function (dt) {
 };
 
 // -------------------------------- layout --------------------------------
+// Janela estreita, altura ajustada ao número de itens da aba atual.
 Forge.prototype.layout = function () {
-  var pw = 330, ph = 214;
+  var pw = 230, headerH = 44, footerH = 18, eh = 34, gap = 4;
+  var n = this.listLength();
+  var ph = headerH + Math.max(1, n) * (eh + gap) + footerH;
   var x = Math.round((CONFIG.GAME_WIDTH - pw) / 2);
   var y = Math.round((CONFIG.GAME_HEIGHT - ph) / 2);
-  var tabW = 90, tabH = 12, tabY = y + 24;
+  var tabW = Math.floor((pw - 24 - 6) / 2), tabH = 12, tabY = y + 24;
   var lay = {
     x: x, y: y, w: pw, h: ph,
     tabForge: { x: x + 12, y: tabY, w: tabW, h: tabH },
     tabSell: { x: x + 12 + tabW + 6, y: tabY, w: tabW, h: tabH },
     entries: []
   };
-  var ex = x + 12, ey = y + 44, ew = pw - 24, eh = 34, gap = 4;
-  var n = this.listLength();
+  var ex = x + 12, ey = y + headerH, ew = pw - 24;
   for (var i = 0; i < n; i++) {
     lay.entries.push({ rect: { x: ex, y: ey + i * (eh + gap), w: ew, h: eh } });
   }
@@ -165,9 +181,15 @@ Forge.prototype.drawWindow = function (ctx) {
   drawTab(ctx, lay.tabForge, 'FORJAR', this.mode === 'forge');
   drawTab(ctx, lay.tabSell, 'VENDER', this.mode === 'sell');
 
+  var sellList = this.mode === 'sell' ? this.sellList() : null;
   for (var i = 0; i < lay.entries.length; i++) {
     if (this.mode === 'forge') this.drawForgeEntry(ctx, lay.entries[i], RECIPES[i], i === this.selected);
-    else this.drawSellEntry(ctx, lay.entries[i], INVENTORY_ORDER[i], i === this.selected);
+    else this.drawSellEntry(ctx, lay.entries[i], sellList[i], i === this.selected);
+  }
+  if (this.mode === 'sell' && sellList.length === 0) {
+    var msg = 'NADA PARA VENDER';
+    ASSETS.drawText(ctx, msg, Math.round(CONFIG.GAME_WIDTH / 2 - ASSETS.textWidth(msg, 1) / 2),
+      lay.y + 52, PAL.gray, 1);
   }
 
   // Rodapé: gold + dica de controles.

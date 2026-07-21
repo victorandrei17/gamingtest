@@ -52,8 +52,8 @@ var BUILDINGS = {
     unlockMessage: 'FERREIRO DESBLOQUEADO',
     cost: { wood: CONFIG.BLACKSMITH_COST },
     buildTime: CONFIG.BUILD_TIME,
-    width: 48,   // px do sprite construído
-    height: 40
+    width: 56,   // px do sprite construído (bigorna + fornalha)
+    height: 44
   }
 };
 

@@ -415,17 +415,54 @@ var ASSETS = (function () {
   // Construções — { built, w, h, anchorX, anchorY }.
   // A área de obra (contorno tracejado) é desenhada por drawSiteMarker.
   // ------------------------------------------------------------------
+  // Estação do ferreiro: fornalha (esquerda) + bigorna grande com marreta (direita).
   function createBlacksmith() {
-    var m = makeCanvas(48, 40);
-    px(m.ctx, PAL.grayDark, 4, 14, 40, 25);   // parede
-    px(m.ctx, PAL.gray, 6, 16, 36, 21);
-    px(m.ctx, PAL.trunkDark, 0, 4, 48, 12);   // telhado
-    px(m.ctx, PAL.trunk, 2, 6, 44, 8);
-    px(m.ctx, PAL.black, 20, 26, 8, 13);      // porta
-    px(m.ctx, PAL.blue, 9, 20, 6, 6);         // janela
-    px(m.ctx, PAL.blue, 33, 20, 6, 6);
-    px(m.ctx, PAL.black, 36, 0, 5, 8);        // chaminé
-    return { built: m.canvas, w: 48, h: 40, anchorX: 24, anchorY: 39 };
+    var m = makeCanvas(56, 44), c = m.ctx;
+
+    // Sombra no chão
+    px(c, 'rgba(26,28,44,0.35)', 4, 40, 48, 3);
+
+    // ---- Fornalha (esquerda) ----
+    px(c, PAL.black, 2, 8, 22, 34);            // contorno
+    px(c, PAL.grayDark, 3, 9, 20, 32);         // pedra
+    px(c, PAL.gray, 4, 11, 18, 1);             // fiadas de tijolo
+    px(c, PAL.gray, 4, 18, 18, 1);
+    px(c, PAL.gray, 4, 33, 18, 1);
+    px(c, PAL.black, 6, 2, 10, 8);             // chaminé
+    px(c, PAL.grayDark, 7, 3, 8, 6);
+    px(c, PAL.black, 7, 23, 12, 15);           // boca da fornalha
+    px(c, '#e05a2a', 8, 26, 10, 11);           // fogo
+    px(c, PAL.bronze, 9, 29, 8, 8);
+    px(c, '#f6c84c', 10, 31, 6, 5);
+    px(c, PAL.white, 12, 33, 2, 2);
+    px(c, '#e05a2a', 8, 21, 10, 2);            // brilho acima da boca
+    px(c, PAL.bronze, 9, 0, 3, 2);             // brasa na chaminé
+
+    // ---- Bigorna (direita), sobre um cepo de madeira ----
+    px(c, PAL.trunkDark, 33, 34, 17, 9);       // cepo
+    px(c, PAL.trunk, 34, 35, 15, 6);
+    px(c, PAL.trunkDark, 39, 36, 1, 5);
+    px(c, PAL.black, 32, 29, 19, 5);           // pé da bigorna
+    px(c, PAL.grayDark, 33, 30, 17, 3);
+    px(c, PAL.gray, 33, 30, 17, 1);
+    px(c, PAL.black, 38, 24, 9, 6);            // cintura
+    px(c, PAL.grayDark, 39, 25, 7, 5);
+    px(c, PAL.black, 30, 17, 24, 8);           // mesa (topo) + contorno
+    px(c, PAL.grayDark, 31, 18, 22, 6);
+    px(c, PAL.gray, 31, 18, 22, 1);            // brilho do topo
+    px(c, PAL.grayDark, 53, 19, 3, 3);         // chifre (à direita)
+    px(c, PAL.grayDark, 55, 20, 1, 1);
+
+    // ---- Marreta apoiada em cima da bigorna ----
+    px(c, PAL.black, 31, 11, 9, 7);            // cabeça (contorno)
+    px(c, PAL.grayDark, 32, 12, 7, 5);
+    px(c, PAL.gray, 32, 12, 7, 1);
+    px(c, PAL.iron, 32, 12, 2, 4);
+    px(c, PAL.trunkDark, 39, 11, 2, 3);        // cabo (diagonal p/ cima-direita)
+    px(c, PAL.trunk, 40, 8, 2, 3);
+    px(c, PAL.trunk, 41, 5, 2, 3);
+
+    return { built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43 };
   }
 
   function drawSiteMarker(ctx, x, y, w, h, time) {
