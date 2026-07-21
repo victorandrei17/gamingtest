@@ -67,6 +67,8 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `FLOAT_TEXT_TIME` | 0.8 | Duração do `+1` flutuante ao coletar |
 | `STAT_FLASH_TIME` | 1.5 | Duração do destaque dourado ao ganhar um bônus |
 | `ENEMY_RESPAWN_TIME` | 5 | Segundos para o inimigo reaparecer no ponto de spawn |
+| `ENEMY_WANDER_MOVE_TIME` | 2 | Segundos andando numa direção sorteada, fora do raio de visão do jogador |
+| `ENEMY_WANDER_PAUSE_TIME` | 3 | Segundos parado entre uma direção sorteada e a próxima (mesmo ciclo) |
 
 ## Arquitetura
 

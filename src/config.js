@@ -67,10 +67,14 @@ var CONFIG = {
   STAT_FLASH_TIME: 1.5,      // s do destaque dourado ao ganhar um bônus
 
   // Inimigos
-  ENEMY_SPEED: 45,           // px/s (50% de PLAYER_SPEED)
+  ENEMY_SPEED: 4.5,          // px/s (10% do valor original de 45 — perseguição e vagar usam a mesma velocidade)
   ENEMY_VISION_RADIUS: 36,   // px — distância para detectar o jogador (120 * 30%)
   ENEMY_STOP_DISTANCE: 12,   // px — distância mínima ao seguir (evita sobrepor o jogador)
   ENEMY_HP: 3,               // vida dos inimigos
   ENEMY_IDLE_ANIM_SPEED: 4,  // frames/s da animação de idle
-  ENEMY_RESPAWN_TIME: 5      // s para o inimigo reaparecer no ponto de spawn
+  ENEMY_RESPAWN_TIME: 5,     // s para o inimigo reaparecer no ponto de spawn
+
+  // Vagar aleatório (fora do raio de visão do jogador — ver Enemy.updateWander)
+  ENEMY_WANDER_MOVE_TIME: 2,  // s andando numa direção sorteada
+  ENEMY_WANDER_PAUSE_TIME: 3  // s parado antes de sortear a próxima direção
 };

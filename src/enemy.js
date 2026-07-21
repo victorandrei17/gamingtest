@@ -6,9 +6,12 @@
 // hp cheio). O inimigo nunca sai de world.enemies — só alterna de estado,
 // igual ao ciclo de respawn de Harvestable.
 // AI: segue o jogador se dentro do raio de visão, para a uma distância mínima
-// (não sobrepõe o jogador). Depende de `rectsOverlap` (player.js) e
-// `flashCanvasFor`/`_flashScratch` (harvestable.js), carregados antes deste
-// arquivo em index.html — não redeclarar aqui.
+// (não sobrepõe o jogador). Fora do raio de visão, vaga aleatoriamente —
+// anda numa direção sorteada por ENEMY_WANDER_MOVE_TIME segundos, para por
+// ENEMY_WANDER_PAUSE_TIME, sorteia de novo (ver updateWander). Depende de
+// `rectsOverlap` (player.js) e `flashCanvasFor`/`_flashScratch`
+// (harvestable.js), carregados antes deste arquivo em index.html — não
+// redeclarar aqui.
 'use strict';
 
 function Enemy(type, x, y) {
@@ -29,6 +32,15 @@ function Enemy(type, x, y) {
   this.vx = 0;                  // velocidade de movimento
   this.vy = 0;
   this.deathParticles = [];     // partículas do despedaçamento
+
+  // Vagar aleatório (ver updateWander): fase inicial sorteada por instância
+  // pra Poring e Coelho Branco não ficarem andando/parando em sincronia.
+  this.wanderState = Math.random() < 0.5 ? 'walk' : 'pause';
+  this.wanderTimer = Math.random() *
+    (this.wanderState === 'walk' ? CONFIG.ENEMY_WANDER_MOVE_TIME : CONFIG.ENEMY_WANDER_PAUSE_TIME);
+  this.wanderDirX = 0;
+  this.wanderDirY = 0;
+  if (this.wanderState === 'walk') this.pickWanderDirection();
 }
 
 Enemy.prototype.sprite = function () {
@@ -50,6 +62,36 @@ function distanceTo(x1, y1, x2, y2) {
   var dx = x2 - x1, dy = y2 - y1;
   return Math.sqrt(dx * dx + dy * dy);
 }
+
+Enemy.prototype.pickWanderDirection = function () {
+  var angle = Math.random() * Math.PI * 2;
+  this.wanderDirX = Math.cos(angle);
+  this.wanderDirY = Math.sin(angle);
+};
+
+// Ciclo andar/parar fora do raio de visão do jogador: alterna
+// ENEMY_WANDER_MOVE_TIME segundos andando numa direção sorteada com
+// ENEMY_WANDER_PAUSE_TIME parado, sorteando uma direção nova a cada retomada.
+Enemy.prototype.updateWander = function (dt) {
+  this.wanderTimer -= dt;
+  if (this.wanderTimer <= 0) {
+    if (this.wanderState === 'walk') {
+      this.wanderState = 'pause';
+      this.wanderTimer = CONFIG.ENEMY_WANDER_PAUSE_TIME;
+    } else {
+      this.wanderState = 'walk';
+      this.wanderTimer = CONFIG.ENEMY_WANDER_MOVE_TIME;
+      this.pickWanderDirection();
+    }
+  }
+  if (this.wanderState === 'walk') {
+    this.vx = this.wanderDirX * CONFIG.ENEMY_SPEED;
+    this.vy = this.wanderDirY * CONFIG.ENEMY_SPEED;
+  } else {
+    this.vx = 0;
+    this.vy = 0;
+  }
+};
 
 Enemy.prototype.moveAxis = function (dx, dy, solids) {
   this.x += dx; this.y += dy;
@@ -114,15 +156,20 @@ Enemy.prototype.update = function (dt, world) {
     // Segue o jogador dentro do raio de visão, mas para a uma distância
     // mínima — sem isso o jogador não é um sólido em world.solids (só
     // harvestables/construções/inimigos são) e o inimigo sobreporia/
-    // atravessaria o personagem em vez de "encostar" nele.
-    if (dist < CONFIG.ENEMY_VISION_RADIUS && dist > CONFIG.ENEMY_STOP_DISTANCE) {
-      var dx = world.player.x - this.x;
-      var dy = world.player.y - this.y;
-      this.vx = (dx / dist) * CONFIG.ENEMY_SPEED;
-      this.vy = (dy / dist) * CONFIG.ENEMY_SPEED;
+    // atravessaria o personagem em vez de "encostar" nele. Fora do raio de
+    // visão, vaga aleatoriamente (updateWander) em vez de ficar parado.
+    if (dist < CONFIG.ENEMY_VISION_RADIUS) {
+      if (dist > CONFIG.ENEMY_STOP_DISTANCE) {
+        var dx = world.player.x - this.x;
+        var dy = world.player.y - this.y;
+        this.vx = (dx / dist) * CONFIG.ENEMY_SPEED;
+        this.vy = (dy / dist) * CONFIG.ENEMY_SPEED;
+      } else {
+        this.vx = 0;
+        this.vy = 0;
+      }
     } else {
-      this.vx = 0;
-      this.vy = 0;
+      this.updateWander(dt);
     }
 
     this.moveAxis(this.vx * dt, 0, world.solids);
