@@ -32,7 +32,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | Constante | Padrão | Efeito |
 |---|---|---|
 | `DEBUG` | `true` | Overlays de desenvolvimento (grade numerada, hitboxes, raio de coleta, coordenadas do jogador, timers de respawn); com `true`, mostra um botão **DEBUG** no canto superior direito da tela pra ligar/desligar o overlay em runtime sem editar este arquivo |
-| `GAME_WIDTH` / `GAME_HEIGHT` | 480 / 270 | Resolução interna |
+| `GAME_WIDTH` / `GAME_HEIGHT` | 336 / 270 | Resolução interna |
 | `SCALE` | 4 | Escala inteira de exibição (1920×1080) |
 | `TILE_SIZE` | 16 | Grid base em px |
 | `PLAYER_SPEED` | 90 | Velocidade do jogador (px/s) |
@@ -188,7 +188,7 @@ de `assets.js` por carregamento de imagens mantendo a interface `ASSETS.*`:
 | Ícones de arma (machado, picareta) | 10×10 | 1 |
 | Ícones de forja (espada, bota, peito, anel, machado de bronze, picareta de bronze) | 12×12 | 1 por receita, chave em `ASSETS.forgeIcons` |
 | Estação do Ferreiro (fornalha + bigorna) | 56×44, âncora (28,43) | construída (a "subida" é recorte progressivo do mesmo sprite) |
-| Chão | 480×270 (ou tileset 16×16) | o xadrez de dev é gerado em `createGround()` — troque só essa função |
+| Chão | 336×270 (ou tileset 16×16) | o xadrez de dev é gerado em `createGround()` — troque só essa função |
 
 O texto usa uma fonte bitmap 3×5 embutida (`ASSETS.drawText`) para ficar sem antialias.
 
