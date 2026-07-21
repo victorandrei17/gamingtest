@@ -260,6 +260,31 @@ var Quests = (function () {
     return { current: current, target: target, binary: false };
   }
 
+  // ASSETS.drawText usa uma fonte bitmap sem acentos (letra não suportada
+  // vira espaço em branco) — normaliza antes de mostrar nome de item na tela.
+  function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+  // Linhas de progresso pro tracker/log, uma por objetivo simples — ou uma
+  // por item nos objetivos com vários itens (COLLECT_SET), pra ficar claro
+  // o que falta de cada um em vez de só uma fração agregada ("0/2").
+  function progressLines(world) {
+    var q = activeQuest();
+    if (!q) return [];
+    var obj = q.objective;
+    if (obj.type === 'COLLECT_SET') {
+      var lines = [];
+      for (var item in obj.items) {
+        var target = obj.items[item], current = Math.min(progress[item] || 0, target);
+        var name = stripAccents(ITEM_TYPES[item].name).toUpperCase();
+        lines.push(target + ' ' + name + '  ' + current + '/' + target);
+      }
+      return lines;
+    }
+    if (obj.type === 'BUILD' || obj.type === 'FORGE') return [q.description];
+    var prog = currentProgress(world);
+    return [q.description + '  ' + prog.current + '/' + prog.target];
+  }
+
   // Construção alvo do marcador de objetivo (4.3): BUILD aponta pra si
   // mesma; outros tipos só apontam se a quest declarar `markerBuilding`.
   function markerBuildingId() {
@@ -280,6 +305,7 @@ var Quests = (function () {
     isCompleted: isCompleted,
     isRecipeLocked: isRecipeLocked,
     currentProgress: currentProgress,
+    progressLines: progressLines,
     chainOrder: chainOrder,
     markerBuildingId: markerBuildingId,
     byId: byId,

@@ -147,12 +147,13 @@ var HUD = (function () {
   }
 
   // -------------------------- tracker de quest (4.1) --------------------------
-  // Canto superior direito, discreto: título + a descrição do objetivo (o que
-  // fazer), com o progresso numérico quando o objetivo não é tudo-ou-nada.
-  // Quando o objetivo é atingido, a quest não conclui sozinha: o tracker pulsa
-  // convidando o clique (Quests.isReady()) e só aplica a reward quando o
-  // jogador clica nele (ver o handler em `update`) — Quests.claim faz o
-  // destaque dourado breve de conclusão (CONFIG.UNLOCK_MSG_TIME).
+  // Canto superior direito, discreto: título + uma linha por objetivo
+  // (Quests.progressLines — nos objetivos com vários itens, ex. COLLECT_SET,
+  // uma linha por item em vez de uma fração agregada). Quando o objetivo é
+  // atingido, a quest não conclui sozinha: o tracker pulsa convidando o
+  // clique (Quests.isReady()) e só aplica a reward quando o jogador clica
+  // nele (ver o handler em `update`) — Quests.claim faz o destaque dourado
+  // breve de conclusão (CONFIG.UNLOCK_MSG_TIME).
   var TRACKER_MAX_W = 132;
   function trackerLayout(world) {
     var q = Quests.activeQuest();
@@ -162,9 +163,12 @@ var HUD = (function () {
     if (ready) {
       lines = wrapText('CONCLUIDA! CLIQUE PARA COLETAR', TRACKER_MAX_W, 1);
     } else {
-      var prog = Quests.currentProgress(world);
-      var body = prog.binary ? q.description : q.description + '  ' + prog.current + '/' + prog.target;
-      lines = wrapText(body, TRACKER_MAX_W, 1);
+      lines = [];
+      var raw = Quests.progressLines(world);
+      for (var r = 0; r < raw.length; r++) {
+        var wrapped = wrapText(raw[r], TRACKER_MAX_W, 1);
+        for (var w2 = 0; w2 < wrapped.length; w2++) lines.push(wrapped[w2]);
+      }
     }
     var w = TRACKER_MAX_W + 8, h = 12 + lines.length * 8 + 3;
     return { x: CONFIG.GAME_WIDTH - w - 4, y: 16, w: w, h: h, lines: lines, title: q.title, ready: ready };
@@ -211,8 +215,9 @@ var HUD = (function () {
   // progresso, as futuras esmaecidas mostrando só o título (sem objetivo).
   function drawQuestLog(ctx, world) {
     var ids = Quests.chainOrder(), activeQ = Quests.activeQuest();
+    var activeLines = activeQ ? Quests.progressLines(world) : [];
     var w = 168, rowH = 13, headerH = 18, footerH = 12, descH = 9;
-    var h = headerH + ids.length * rowH + (activeQ ? descH : 0) + footerH;
+    var h = headerH + ids.length * rowH + activeLines.length * descH + footerH;
     var x = Math.round((CONFIG.GAME_WIDTH - w) / 2);
     var y = Math.round((CONFIG.GAME_HEIGHT - h) / 2);
     ASSETS.drawPanel(ctx, x, y, w, h);
@@ -226,14 +231,14 @@ var HUD = (function () {
       var active = !done && activeQ && ids[i] === activeQ.id;
       var mark = done ? '[X] ' : active ? '[>] ' : '[ ] ';
       var color = done ? PAL.leafLight : active ? PAL.white : PAL.grayDark;
-      var line = mark + q.title;
-      if (active) {
-        var prog = Quests.currentProgress(world);
-        if (!prog.binary) line += '  ' + prog.current + '/' + prog.target;
-      }
-      ASSETS.drawText(ctx, line, x + 8, ry + 3, color, 1);
+      ASSETS.drawText(ctx, mark + q.title, x + 8, ry + 3, color, 1);
       ry += rowH;
-      if (active) { ASSETS.drawText(ctx, q.description, x + 16, ry + 3, PAL.gray, 1); ry += descH; }
+      if (active) {
+        for (var l = 0; l < activeLines.length; l++) {
+          ASSETS.drawText(ctx, activeLines[l], x + 16, ry + 3, PAL.gray, 1);
+          ry += descH;
+        }
+      }
     }
     var hint = '[Q]';
     ASSETS.drawText(ctx, hint, x + w - ASSETS.textWidth(hint, 1) - 6, y + h - 10, PAL.gray, 1);
