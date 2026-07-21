@@ -43,7 +43,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `HIT_COOLDOWN` | 0.5 | Segundos entre golpes (dividido por `attackSpeed`) |
 | `ATTACK_ANIM_TIME` | 0.25 | Duração da animação de golpe |
 | `RESPAWN_TIME` | 5 | Segundos para o objeto reaparecer |
-| `DESTROYED_SPRITE_TIME` | 0.3 | Tempo exibindo o sprite destruído |
+| `DEATH_FADE_TIME` | 2 | Segundos de fade ao morrer (árvores/rochas e inimigos) |
 | `SPAWN_ANIM_TIME` | 0.4 | Duração da animação de surgimento |
 | `HEALTHBAR_HIDE_TIME` | 3 | Segundos sem dano até esconder a barra de vida |
 | `START_INVENTORY_QTY` | 10 | Quantidade inicial de cada coletável (facilita testar forja/venda sem coletar antes) |
@@ -62,6 +62,7 @@ Todos os números de balanceamento vivem em `CONFIG` — nenhum valor mágico no
 | `HUD_PULSE_TIME` | 0.25 | Duração do pulso do contador do HUD ao coletar |
 | `FLOAT_TEXT_TIME` | 0.8 | Duração do `+1` flutuante ao coletar |
 | `STAT_FLASH_TIME` | 1.5 | Duração do destaque dourado ao ganhar um bônus |
+| `ENEMY_RESPAWN_TIME` | 5 | Segundos para o inimigo reaparecer no ponto de spawn |
 
 ## Arquitetura
 

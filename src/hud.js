@@ -295,6 +295,10 @@ var HUD = (function () {
       var h = world.harvestables[j];
       if (h.state === 'respawning') ASSETS.drawText(ctx, h.timer.toFixed(1), Math.round(h.x - 7), Math.round(h.y - 12), ASSETS.palette.white, 1);
     }
+    for (var k = 0; k < world.enemies.length; k++) {
+      var en = world.enemies[k];
+      if (en.state === 'respawning') ASSETS.drawText(ctx, en.timer.toFixed(1), Math.round(en.x - 7), Math.round(en.y - 12), ASSETS.palette.white, 1);
+    }
     var p = world.player;
     var info = 'T ' + Math.floor(p.x / t) + ',' + Math.floor(p.y / t) + '  P ' + Math.round(p.x) + ',' + Math.round(p.y);
     ctx.fillStyle = 'rgba(26,28,44,0.7)';

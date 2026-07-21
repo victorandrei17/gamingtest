@@ -58,7 +58,7 @@ Harvestable.prototype.takeHit = function (dmg, world) {
   if (this.hp <= 0) {
     this.alive = false;
     this.state = 'destroyed';
-    this.timer = CONFIG.DESTROYED_SPRITE_TIME;
+    this.timer = CONFIG.DEATH_FADE_TIME;
     world.spawnDrop(this.def.drops, this.x, this.y);
   }
 };
@@ -124,6 +124,14 @@ Harvestable.prototype.draw = function (ctx) {
     var t = 1 - this.timer / CONFIG.SPAWN_ANIM_TIME;
     var sh = Math.max(1, Math.round(s.h * t));
     ctx.drawImage(img, 0, s.h - sh, s.w, sh, dx, Math.round(this.y - s.anchorY + (s.h - sh)), s.w, sh);
+    return;
+  }
+
+  if (this.state === 'destroyed') {
+    // Fade linear do sprite destruído até sumir por completo.
+    ctx.globalAlpha = Math.max(0, this.timer / CONFIG.DEATH_FADE_TIME);
+    ctx.drawImage(img, dx, dy);
+    ctx.globalAlpha = 1;
     return;
   }
 

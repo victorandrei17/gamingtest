@@ -1,5 +1,8 @@
 // enemy.js — inimigos (geléia rosa / Poring).
-// Ciclo de vida: alive -> destroyed (desaparecendo) -> dead.
+// Ciclo de vida: alive -> destroyed (pedaços caem e somem em DEATH_FADE_TIME)
+// -> respawning (invisível, ENEMY_RESPAWN_TIME) -> alive (volta ao spawn com
+// hp cheio). O inimigo nunca sai de world.enemies — só alterna de estado,
+// igual ao ciclo de respawn de Harvestable.
 // AI: segue o jogador se dentro do raio de visão, para a uma distância mínima
 // (não sobrepõe o jogador). Depende de `rectsOverlap` (player.js) e
 // `flashCanvasFor`/`_flashScratch` (harvestable.js), carregados antes deste
@@ -11,9 +14,11 @@ function Enemy(type, x, y) {
   this.def = ENEMY_TYPES[type];
   this.x = x;                   // centro da base (pés)
   this.y = y;
+  this.spawnX = x;              // ponto de origem — volta pra cá ao respawnar
+  this.spawnY = y;
   this.maxHp = this.def.hp;
   this.hp = this.maxHp;
-  this.state = 'alive';         // 'alive' | 'destroyed' | 'dead'
+  this.state = 'alive';         // 'alive' | 'destroyed' | 'respawning'
   this.timer = 0;
   this.alive = true;            // atacável?
   this.animTime = 0;
@@ -76,9 +81,7 @@ Enemy.prototype.takeHit = function (dmg, weaponId, world) {
   if (this.hp <= 0) {
     this.alive = false;
     this.state = 'destroyed';
-    // O inimigo só sai de world.enemies (e leva seus deathParticles junto)
-    // depois que o fade termina — senão os pedaços somem cedo demais.
-    this.timer = CONFIG.ENEMY_DEATH_FADE_TIME;
+    this.timer = CONFIG.DEATH_FADE_TIME;
     world.spawnDrop('geleia_rosa', this.x, this.y);
     this.spawnDeathParticles();
   }
@@ -127,7 +130,17 @@ Enemy.prototype.update = function (dt, world) {
   if (this.state === 'destroyed') {
     this.timer -= dt;
     if (this.timer <= 0) {
-      this.state = 'dead';
+      this.state = 'respawning';
+      this.timer = CONFIG.ENEMY_RESPAWN_TIME;
+    }
+  } else if (this.state === 'respawning') {
+    this.timer -= dt;
+    if (this.timer <= 0) {
+      this.x = this.spawnX;
+      this.y = this.spawnY;
+      this.hp = this.maxHp;
+      this.alive = true;
+      this.state = 'alive';
     }
   }
 
@@ -189,8 +202,8 @@ function DeathParticle(x, y, vx, vy, groundY) {
   this.groundY = groundY;
   this.landed = false;
   this.size = 2 + Math.round(Math.random() * 2); // fixo por partícula (não pisca)
-  this.life = CONFIG.ENEMY_DEATH_FADE_TIME;
-  this.maxLife = CONFIG.ENEMY_DEATH_FADE_TIME;
+  this.life = CONFIG.DEATH_FADE_TIME;
+  this.maxLife = CONFIG.DEATH_FADE_TIME;
   this.dead = false;
 }
 

@@ -31,7 +31,7 @@ var CONFIG = {
 
   // Objetos atingíveis
   RESPAWN_TIME: 5,           // s para reaparecer
-  DESTROYED_SPRITE_TIME: 0.3,// s exibindo sprite destruído
+  DEATH_FADE_TIME: 2,        // s de fade ao morrer (harvestables e inimigos)
   SPAWN_ANIM_TIME: 0.4,      // s da animação de surgimento
   HEALTHBAR_HIDE_TIME: 3,    // s sem dano para esconder a barra de vida
 
@@ -67,5 +67,5 @@ var CONFIG = {
   ENEMY_STOP_DISTANCE: 12,   // px — distância mínima ao seguir (evita sobrepor o jogador)
   ENEMY_HP: 3,               // vida dos inimigos
   ENEMY_IDLE_ANIM_SPEED: 4,  // frames/s da animação de idle
-  ENEMY_DEATH_FADE_TIME: 2   // s até os pedaços da geléia sumirem por completo
+  ENEMY_RESPAWN_TIME: 5      // s para o inimigo reaparecer no ponto de spawn
 };

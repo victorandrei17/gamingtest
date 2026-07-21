@@ -114,10 +114,7 @@
     var i;
     for (i = 0; i < world.harvestables.length; i++) world.harvestables[i].update(dt);
     for (i = 0; i < world.buildings.length; i++) world.buildings[i].update(dt, world.player, world);
-    for (i = world.enemies.length - 1; i >= 0; i--) {
-      world.enemies[i].update(dt, world);
-      if (world.enemies[i].state === 'dead') world.enemies.splice(i, 1);
-    }
+    for (i = 0; i < world.enemies.length; i++) world.enemies[i].update(dt, world);
     for (i = world.drops.length - 1; i >= 0; i--) {
       world.drops[i].update(dt, world.player, world);
       if (world.drops[i].dead) world.drops.splice(i, 1);
