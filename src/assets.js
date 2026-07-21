@@ -405,6 +405,13 @@ var ASSETS = (function () {
         px(ctx, PAL.pink, 2, 2, 4, 4);
         px(ctx, '#e06ac0', 1, 3, 6, 4);
         px(ctx, '#f4a8d8', 3, 3, 2, 1);
+      }),
+      pluma: createItem(function (ctx) {
+        px(ctx, '#dcdce4', 2, 1, 4, 5);   // contorno sutil (não sumir no fundo)
+        px(ctx, PAL.white, 2, 2, 4, 3);   // corpo da pluma
+        px(ctx, PAL.white, 1, 3, 1, 2);   // fiapo esquerdo
+        px(ctx, PAL.white, 6, 2, 1, 2);   // fiapo direito
+        px(ctx, PAL.white, 4, 0, 1, 1);   // pontinha
       })
     };
   }
@@ -636,8 +643,9 @@ var ASSETS = (function () {
   }
 
   // ------------------------------------------------------------------
-  // Inimigos — Geléia Rosa (Poring). 16x16 px, âncora no centro (8,8).
-  // Animação: 2 frames de movimento oscilante.
+  // Inimigos — 16x16 px, âncora no centro (8,8). Animação: 2 frames de
+  // movimento oscilante (bob 0/1). Nova espécie = uma função draw* aqui +
+  // uma entrada no mapa de createEnemySprites (mesmo tamanho/âncora).
   // ------------------------------------------------------------------
   function drawPoringFrame(ctx, bob) {
     // Corpo principal (blob)
@@ -654,15 +662,45 @@ var ASSETS = (function () {
     px(ctx, PAL.black, 10, 8 + bob, 1, 1);
   }
 
-  function createEnemySprites() {
+  // Coelho Branco — estilo Lunatic (Ragnarok): corpo branco arredondado
+  // (mesma silhueta/posição do Poring) + orelhas compridas + laço azul.
+  function drawRabbitFrame(ctx, bob) {
+    // Corpo (branco, redondo — mesma base do Poring pra manter o hurtbox certo)
+    px(ctx, PAL.white, 4, 5 + bob, 8, 6);
+    px(ctx, '#dcdce4', 3, 6 + bob, 10, 4);   // sombra sutil
+    px(ctx, PAL.white, 4, 6 + bob, 8, 3);
+
+    // Orelhas compridas saindo do topo da cabeça
+    px(ctx, PAL.white, 4, 0 + bob, 2, 5);
+    px(ctx, '#ffc9dd', 4, 1 + bob, 1, 3);    // interior rosado
+    px(ctx, PAL.white, 10, 0 + bob, 2, 5);
+    px(ctx, '#ffc9dd', 11, 1 + bob, 1, 3);
+
+    // Laço azul entre as orelhas (referência ao Lunatic)
+    px(ctx, PAL.blue, 7, 3 + bob, 2, 2);
+
+    // Olhinhos
+    px(ctx, PAL.black, 5, 8 + bob, 1, 1);
+    px(ctx, PAL.black, 10, 8 + bob, 1, 1);
+
+    // Nariz rosado
+    px(ctx, '#e86ac0', 7, 10 + bob, 2, 1);
+  }
+
+  function createEnemyIdleFrames(drawFn) {
     var idle = [];
     for (var i = 0; i < 2; i++) {
       var m = makeCanvas(16, 16);
-      drawPoringFrame(m.ctx, i === 0 ? 0 : 1);
+      drawFn(m.ctx, i === 0 ? 0 : 1);
       idle.push(m.canvas);
     }
+    return { idle: idle, w: 16, h: 16, anchorX: 8, anchorY: 8 };
+  }
+
+  function createEnemySprites() {
     return {
-      poring: { idle: idle, w: 16, h: 16, anchorX: 8, anchorY: 8 }
+      poring: createEnemyIdleFrames(drawPoringFrame),
+      coelho_branco: createEnemyIdleFrames(drawRabbitFrame)
     };
   }
 

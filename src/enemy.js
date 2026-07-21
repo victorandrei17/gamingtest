@@ -1,4 +1,6 @@
-// enemy.js — inimigos (geléia rosa / Poring).
+// enemy.js — inimigos (Poring, Coelho Branco, ...). Toda espécie usa esta
+// mesma lógica; o que muda por tipo (sprite, drop, cor do despedaçamento)
+// vive em ENEMY_TYPES (data.js) e ASSETS.enemies (assets.js).
 // Ciclo de vida: alive -> destroyed (pedaços caem e somem em DEATH_FADE_TIME)
 // -> respawning (invisível, ENEMY_RESPAWN_TIME) -> alive (volta ao spawn com
 // hp cheio). O inimigo nunca sai de world.enemies — só alterna de estado,
@@ -10,7 +12,7 @@
 'use strict';
 
 function Enemy(type, x, y) {
-  this.type = type;             // 'poring' ou similar
+  this.type = type;             // chave de ENEMY_TYPES ('poring', 'coelho_branco', ...)
   this.def = ENEMY_TYPES[type];
   this.x = x;                   // centro da base (pés)
   this.y = y;
@@ -82,15 +84,18 @@ Enemy.prototype.takeHit = function (dmg, weaponId, world) {
     this.alive = false;
     this.state = 'destroyed';
     this.timer = CONFIG.DEATH_FADE_TIME;
-    world.spawnDrop('geleia_rosa', this.x, this.y);
+    world.spawnDrop(this.def.drops, this.x, this.y);
     this.spawnDeathParticles();
   }
 };
 
-// Pedaços de geléia que se despedaçam do corpo, caem no chão por gravidade
-// e ficam parados ali sumindo aos poucos (sem explosão radial).
+// Pedaços do corpo que se despedaçam, caem no chão por gravidade e ficam
+// parados ali sumindo aos poucos (sem explosão radial). A cor vem de
+// ENEMY_TYPES[type].color (chave de ASSETS.palette) — cada espécie usa a
+// própria cor sem precisar tocar nesta função.
 Enemy.prototype.spawnDeathParticles = function () {
   var s = this.sprite();
+  var color = ASSETS.palette[this.def.color] || ASSETS.palette.white;
   var groundY = this.y + 2; // altura aproximada onde o sprite "pisa"
   for (var i = 0; i < 6; i++) {
     var startX = this.x + (Math.random() - 0.5) * s.w * 0.5;
@@ -98,7 +103,7 @@ Enemy.prototype.spawnDeathParticles = function () {
     var vx = (Math.random() - 0.5) * 40; // espalhamento pequeno, não explosivo
     var vy = -20 - Math.random() * 20;   // pequeno salto ao se despedaçar, depois cai
     var landY = groundY + (Math.random() - 0.5) * 4;
-    this.deathParticles.push(new DeathParticle(startX, startY, vx, vy, landY));
+    this.deathParticles.push(new DeathParticle(startX, startY, vx, vy, landY, color));
   }
 };
 
@@ -192,14 +197,15 @@ Enemy.prototype.drawHealthbar = function (ctx) {
   ctx.fillRect(x, y, Math.round(w * this.hp / this.maxHp), h);
 };
 
-// Pedaço de geléia (morte do inimigo): cai por gravidade até `groundY`,
-// pousa e fica parado ali sumindo em fade linear pelo tempo total de vida.
-function DeathParticle(x, y, vx, vy, groundY) {
+// Pedaço do corpo (morte do inimigo): cai por gravidade até `groundY`, pousa
+// e fica parado ali sumindo em fade linear pelo tempo total de vida.
+function DeathParticle(x, y, vx, vy, groundY, color) {
   this.x = x;
   this.y = y;
   this.vx = vx;
   this.vy = vy;
   this.groundY = groundY;
+  this.color = color;
   this.landed = false;
   this.size = 2 + Math.round(Math.random() * 2); // fixo por partícula (não pisca)
   this.life = CONFIG.DEATH_FADE_TIME;
@@ -230,7 +236,7 @@ DeathParticle.prototype.draw = function (ctx) {
   var y = Math.round(this.y);
 
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = ASSETS.palette.pink;
+  ctx.fillStyle = this.color;
   ctx.fillRect(x - this.size / 2, y - this.size / 2, this.size, this.size);
   ctx.globalAlpha = 1.0;
 };

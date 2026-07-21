@@ -31,6 +31,7 @@ var LEVEL = {
   // x,y = centro da base (pés) do inimigo.
   enemies: [
     { type: 'poring', x: 350, y: 150 },
-    { type: 'poring', x: 150, y: 100 }
+    { type: 'poring', x: 150, y: 100 },
+    { type: 'coelho_branco', x: 280, y: 190 }
   ]
 };

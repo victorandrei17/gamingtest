@@ -13,9 +13,10 @@ var ITEM_TYPES = {
   iron_ore:    { name: 'Minério de Ferro' },
   bronze_ore:  { name: 'Minério de Bronze' },
   stone_piece: { name: 'Pedra' },
-  geleia_rosa: { name: 'Geléia Rosa', startQty: 0 }
+  geleia_rosa: { name: 'Geléia Rosa', startQty: 0 },
+  pluma:       { name: 'Pluma', startQty: 0 }
 };
-var INVENTORY_ORDER = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece', 'geleia_rosa'];
+var INVENTORY_ORDER = ['wood', 'iron_ore', 'bronze_ore', 'stone_piece', 'geleia_rosa', 'pluma'];
 
 // Armas: que categoria de alvo cada uma atinge.
 // Para adicionar uma arma nova: nova entrada aqui + sprite em assets.js
@@ -83,7 +84,11 @@ var EQUIP_SLOTS = {
 };
 var EQUIP_SLOT_ORDER = ['weapon', 'boot', 'axe', 'pickaxe', 'chest', 'ring'];
 
-// Inimigos (Milestone 3)
+// Inimigos (Milestone 3). drops: itemId dropado ao morrer (data.js ITEM_TYPES);
+// color: chave de ASSETS.palette usada nos pedaços de despedaçamento (enemy.js).
+// Nova espécie = uma entrada aqui + sprite em ASSETS.enemies (assets.js) +
+// instância em level.js — a lógica de dano/morte/respawn não muda.
 var ENEMY_TYPES = {
-  poring: { name: 'Geléia Rosa', hp: CONFIG.ENEMY_HP }
+  poring:        { name: 'Poring',        hp: CONFIG.ENEMY_HP, drops: 'geleia_rosa', color: 'pink' },
+  coelho_branco: { name: 'Coelho Branco', hp: CONFIG.ENEMY_HP, drops: 'pluma',       color: 'white' }
 };
