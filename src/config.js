@@ -17,8 +17,8 @@ var CONFIG = {
 
   // Jogador
   PLAYER_SPEED: 90,          // px/s
-  PLAYER_HITBOX_W: 8,        // hitbox pelos "pés" (-1px de cada lateral vs. o sprite)
-  PLAYER_HITBOX_H: 6,
+  PLAYER_HITBOX_W: 10,       // hitbox pelos "pés"
+  PLAYER_HITBOX_H: 4,        // -1px de cada lateral (cima/baixo) vs. o valor anterior
   PLAYER_REACH: 6,           // alcance do golpe à frente do jogador (px)
 
   // Combate (o dano por hit vem do atributo `damage`, ver Atributos abaixo)
