@@ -116,8 +116,14 @@ ativa, progresso e mapa de concluídas) para inspeção no console.
   instância em `LEVEL.buildings` + sprite em `ASSETS.buildings`. Só o ferreiro
   abre a janela de forja (`Forge.nearSmith` filtra por `type: 'blacksmith'`) —
   outras construções não interferem nesse fluxo. `explosionOnBuild: true`
-  troca o reveal padrão ("casa subindo") por um estouro de partículas
-  (`ASSETS.particleColors[type]` define as cores) ao concluir.
+  troca a montagem padrão por um estouro de partículas
+  (`ASSETS.particleColors[type]` define as cores) ao concluir. Sem essa flag,
+  a fase de obra usa a **animação de montagem mágica** (`Building.buildAssembly`
+  /`drawAssembly`): o sprite final é fatiado em blocos de 4px que voam de todas
+  as direções e se encaixam de baixo pra cima (fundação primeiro), com blueprint
+  fantasma, aura de energia, motes orbitando, rastro nos blocos, brilho de
+  encaixe e um clarão + baque final — sem nenhuma arte adicional, tudo derivado
+  do próprio sprite `built`.
 - **Nova receita de forja**: uma entrada em `RECIPES` (`recipes.js`) + ícone em
   `ASSETS.forgeIcons` — a janela de forja, o custo e o equipamento se adaptam sozinhos.
 - **Nova quest**: uma entrada em `QUESTS` (`quests.js`), apontando `next` para
