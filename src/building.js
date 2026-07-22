@@ -99,7 +99,12 @@ Building.prototype.update = function (dt, player, world) {
       this.state = 'built';
       // Construções declaradas com explosionOnBuild "estouram" em vez do
       // reveal padrão (usado pela ilha em vez da casa "subindo" do ferreiro).
-      if (this.def.explosionOnBuild) world.spawnParticles(this.x, this.y, this.type, 24);
+      if (this.def.explosionOnBuild) {
+        world.spawnParticles(this.x, this.y, this.type, 24);
+        if (typeof FX !== 'undefined') FX.addShake(0.9); // estrondo da nova terra surgindo
+      } else if (typeof FX !== 'undefined') {
+        FX.addShake(0.3); // "toc" da construção assentando
+      }
       world.showMessage(this.def.unlockMessage, CONFIG.UNLOCK_MSG_TIME);
       Quests.onEvent('BUILD', { buildingId: this.type }, world);
     }

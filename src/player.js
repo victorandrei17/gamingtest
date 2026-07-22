@@ -20,6 +20,7 @@ function Player(character, x, y) {
   this.hasAxe = false;
   this.pickupAnimTime = 0;    // >0: tocou um pickup — trava movimento/ataque
   this.pickupIcon = null;     // ícone erguido acima da cabeça durante a animação
+  this.stepTimer = 0;         // cadência da poeirinha de passo (fx)
 }
 
 // Chamado por Pickup (pickup.js) ao ser tocado: trava o jogador parado por
@@ -111,6 +112,14 @@ Player.prototype.update = function (dt, world) {
     else this.dir = mv.y > 0 ? 'down' : 'up';
     this.moveAxis(mv.x * speed * dt, 0, world.solids);
     this.moveAxis(0, mv.y * speed * dt, world.solids);
+    // Poeirinha de passo em cadência (decorativo, fx).
+    this.stepTimer -= dt;
+    if (this.stepTimer <= 0 && typeof FX !== 'undefined') {
+      FX.puff(this.x, this.y);
+      this.stepTimer = 0.24;
+    }
+  } else {
+    this.stepTimer = 0;
   }
 
   // Objeto à frente -> arma automática + ataque automático (só de frente,

@@ -123,6 +123,7 @@ Enemy.prototype.takeHit = function (dmg, weaponId, world) {
   this.hp -= dmg;
   this.flashTime = 0.08;
   this.healthbarTime = CONFIG.HEALTHBAR_HIDE_TIME;
+  if (typeof FX !== 'undefined') FX.addShake(0.16);
 
   if (this.hp <= 0) {
     this.alive = false;
@@ -130,6 +131,7 @@ Enemy.prototype.takeHit = function (dmg, weaponId, world) {
     this.timer = CONFIG.DEATH_FADE_TIME;
     world.spawnDrop(this.def.drops, this.x, this.y);
     this.spawnDeathParticles();
+    if (typeof FX !== 'undefined') FX.addShake(0.35);
   }
 };
 

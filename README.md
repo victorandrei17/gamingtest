@@ -84,6 +84,7 @@ src/recipes.js      receitas forjáveis declarativas (RECIPES)
 src/quests.js       cadeia de quests declarativa (QUESTS) + motor de progresso/reward
 src/equipment.js    itens equipados → injeta modificadores em stats
 src/assets.js       TODA a arte (procedural) — única camada a trocar por sprites reais
+src/fx.js           camada de atmosfera/juice: água animada, sombras, pólen, vento, screen shake, vinheta
 src/input.js        teclado (vetor normalizado nas diagonais) + mouse
 src/effects.js      partículas de hit e pop de coleta
 src/player.js       máquina de estados idle/walk/attack/pickup, colisão; lê dano/velocidade de stats
@@ -304,6 +305,38 @@ forjar a Espada (desbloqueia o Machado de Bronze) → vender 5 itens → caçar
 Poring/Coelho Branco por Geléia Rosa e Pluma → entregar os dois na área da
 ilha (`BUILDINGS.island.cost`) — guiando o jogador até a expansão da ilha, que
 já existia no código mas não tinha nenhum gancho narrativo até agora.
+
+## Atmosfera & "juice" (`src/fx.js`)
+
+Camada puramente cosmética que envolve o mundo sem tocar em nenhuma regra —
+todos os hooks nos outros sistemas são guardados com `typeof FX !== 'undefined'`,
+então o jogo roda igual se ela for removida. `FX.init()` roda no bootstrap;
+`FX.update(dt)` avança nas duas cenas; o resto são chamadas de desenho em
+`drawWorld`/`drawSelect`.
+
+- **Água animada** (`FX.drawWater`): a faixa a leste é redesenhada todo frame
+  com gradiente de profundidade, cáusticas de luz rolando, cintilância
+  especular e espuma ondulando na praia oeste — e ao redor da ilha depois de
+  revelada.
+- **Sombras suaves** (`FX.shadow`): elipse translúcida sob cada entidade
+  (jogador, inimigos, harvestables, construções, drops, pickups), num passe
+  antes das entidades em `drawWorld`.
+- **Brilho de coletáveis** (`FX.glow`): halo radial atrás de drops (quente) e
+  do machado no chão (dourado, pulsante) pra chamarem o olhar.
+- **Vento** (`FX.wind`): função de sway compartilhada — árvores vivas
+  cisalham a copa (base fixa) e os tufos/flores de grama balançam juntos.
+- **Pólen** (`FX.drawPollen`) e **poeira de passo** (`FX.puff`/`drawPuffs`):
+  partículas ambientes flutuando sobre a grama + baforadas nos pés ao andar.
+- **Screen shake** (`FX.addShake`/`shakeOffset`): trauma que decai; disparado
+  a cada golpe/derrubada de recurso, morte de inimigo e — bem forte — no
+  estouro da ilha. Aplicado só ao mundo (HUD e vinheta ficam de fora).
+- **Vinheta + brilho quente** (`FX.drawVignette`): canvas pré-renderizado
+  blitado sobre a tela (fora do shake) pra dar profundidade e clima de sol.
+
+A cena de seleção (`drawSelect`) também foi repaginada sobre essa base: céu
+em gradiente com sol radiante e raios girando, nuvens derivando, colinas em
+parallax, pódios com halo dourado no herói selecionado, faíscas subindo e
+banner de título em madeira (`ASSETS.drawPanel`).
 
 ## Sprites a substituir (`src/assets.js`)
 

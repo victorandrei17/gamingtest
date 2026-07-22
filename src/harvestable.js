@@ -55,11 +55,13 @@ Harvestable.prototype.takeHit = function (dmg, world) {
   this.shakeTime = 0.12;
   this.healthbarTime = CONFIG.HEALTHBAR_HIDE_TIME;
   world.spawnParticles(this.x, this.y - 10, this.def.category);
+  if (typeof FX !== 'undefined') FX.addShake(0.14); // tranco leve a cada golpe
   if (this.hp <= 0) {
     this.alive = false;
     this.state = 'destroyed';
     this.timer = CONFIG.DEATH_FADE_TIME;
     world.spawnDrop(this.def.drops, this.x, this.y);
+    if (typeof FX !== 'undefined') FX.addShake(0.4); // baque forte ao derrubar
     Quests.onEvent('DESTROY', { category: this.def.category, resourceId: this.type }, world);
   }
 };
@@ -133,6 +135,19 @@ Harvestable.prototype.draw = function (ctx) {
     ctx.globalAlpha = Math.max(0, this.timer / CONFIG.DEATH_FADE_TIME);
     ctx.drawImage(img, dx, dy);
     ctx.globalAlpha = 1;
+    return;
+  }
+
+  // Árvores vivas balançam ao vento: cisalhamento horizontal com pivô nos
+  // pés (copa se mexe, base fica firme). Rochas não balançam.
+  var sway = (this.def.category === 'tree' && typeof FX !== 'undefined')
+    ? FX.wind(this.x, this.y) * 0.03 : 0;
+  if (sway !== 0) {
+    ctx.save();
+    ctx.transform(1, 0, sway, 1, -sway * this.y, 0);
+    ctx.drawImage(img, dx, dy);
+    if (this.flashTime > 0 && this.state === 'alive') ctx.drawImage(flashCanvasFor(img), dx, dy);
+    ctx.restore();
     return;
   }
 
