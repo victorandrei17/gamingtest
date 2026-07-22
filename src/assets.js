@@ -481,8 +481,7 @@ var ASSETS = (function () {
     var woodL = '#b07a44', woodM = '#835330', woodD = '#5c391d', woodX = '#3f2614';
     var stlL = '#d2dbe6', stlM = '#98a4b6', stlD = '#616d82', stlX = '#3c4458';
     var stlOL = '#262f3e', spec = '#ffffff'; // aço (frio, contrasta com o calor)
-    var fRed = '#d8461e', fOr = '#f5882b', fYel = '#ffcf3f', fCore = '#fff2c2';
-    var glowA = 'rgba(245,140,50,0.34)', glowB = 'rgba(245,140,50,0.20)';
+    var glowB = 'rgba(245,140,50,0.20)';     // brilho fraco do fogo na pedra
     var ironD = '#2c2838', ironM = '#413c52', ironL = '#544d68';
 
     // ---- Sombras de contato no chão ----
@@ -531,19 +530,16 @@ var ASSETS = (function () {
     px(c, '#ffb24a', 10, 1, 2, 1);                        // brasa na saída
     px(c, 'rgba(255,180,80,0.5)', 9, 0, 4, 1);
 
-    // Boca da fornalha (arco escuro) + fogo + brilho na pedra.
-    px(c, glowA, 7, 22, 14, 1); px(c, glowB, 6, 23, 1, 16); px(c, glowB, 20, 23, 1, 16);
-    px(c, glowA, 8, 39, 12, 1);
-    // barra/lintel de ferro sobre a boca
-    px(c, stlX, 7, 20, 14, 2); px(c, '#8894a6', 7, 20, 14, 1);
-    px(c, '#180f1e', 8, 22, 12, 18);                      // vão escuro
-    px(c, stM, 8, 22, 1, 1); px(c, stM, 19, 22, 1, 1);    // cantos arredondados
-    px(c, fRed, 9, 25, 10, 14);                           // fogo (do vermelho ao branco)
-    px(c, fOr, 10, 28, 8, 11);
-    px(c, fYel, 11, 31, 6, 8);
-    px(c, fCore, 12, 34, 4, 4);
-    px(c, spec, 13, 36, 2, 2);
-    px(c, fOr, 11, 24, 2, 2); px(c, fYel, 14, 25, 2, 1); px(c, fRed, 16, 24, 2, 2); // labaredas
+    // Boca da fornalha (vão escuro). As CHAMAS são desenhadas animadas por
+    // cima, em Building.draw, na região `fire` devolvida no fim (ver
+    // ASSETS.drawForgeFire). Aqui fica só o vão, o lintel de ferro, o brilho
+    // fraco na pedra e um leito de brasas pra base nunca parecer "apagada".
+    px(c, glowB, 7, 22, 14, 1); px(c, glowB, 6, 23, 1, 16); px(c, glowB, 20, 23, 1, 16);
+    px(c, stlX, 7, 20, 14, 2); px(c, '#8894a6', 7, 20, 14, 1); // lintel de ferro
+    px(c, '#160d1a', 8, 22, 12, 18);                     // vão escuro
+    px(c, stM, 8, 22, 1, 1); px(c, stM, 19, 22, 1, 1);   // cantos arredondados
+    px(c, '#3a1206', 9, 37, 10, 2);                      // leito de brasas (escuro)
+    px(c, '#6e2410', 10, 38, 8, 1);
 
     // ================= BIGORNA + CEPO (direita) =================
     // Cepo de madeira: topo em 3/4 (iluminado) + frente com veios.
@@ -559,30 +555,109 @@ var ASSETS = (function () {
     // Sombra de contato da bigorna no topo do cepo.
     px(c, 'rgba(20,16,30,0.30)', 35, 30, 15, 1);
 
-    // Bigorna de aço frio (contrasta com o calor da cena), luz de cima.
-    // Mesa (topo) com chifre à direita.
-    px(c, stlOL, 32, 17, 21, 1);
-    px(c, stlM, 33, 18, 19, 5);
-    px(c, stlL, 33, 18, 19, 1);                           // face de topo iluminada
-    px(c, stlL, 33, 18, 1, 4); px(c, spec, 34, 18, 2, 1); // brilho canto frontal-esq
-    px(c, stlD, 33, 22, 19, 1);                           // sombra sob a mesa
-    px(c, stlM, 52, 19, 3, 2); px(c, stlL, 52, 19, 2, 1); // chifre
-    px(c, stlOL, 55, 20, 1, 1);
-    // Cintura.
-    px(c, stlD, 40, 23, 6, 5); px(c, stlM, 41, 23, 4, 4); px(c, stlX, 40, 27, 6, 1);
-    // Base/pés.
-    px(c, stlOL, 34, 28, 18, 1);
-    px(c, stlM, 35, 28, 16, 4);
-    px(c, stlL, 35, 28, 16, 1);
-    px(c, stlX, 35, 31, 16, 1);
-    px(c, stlOL, 34, 32, 18, 1);
+    // Bigorna de aço frio em 3/4 (contrasta com o calor da cena). Luz vindo
+    // de cima-esquerda: face de topo iluminada (paralelogramo recuando p/
+    // cima-direita) + face frontal sombreada + chifre apontando na diagonal.
+    // --- Base / pés ---
+    px(c, stlOL, 34, 30, 18, 2);                          // contorno + underside
+    px(c, stlX, 35, 30, 16, 1);                           // sombra sob a base
+    px(c, stlM, 35, 27, 16, 3);                           // frente da base
+    px(c, stlD, 35, 29, 16, 1);
+    px(c, stlL, 36, 26, 14, 1);                           // topo iluminado da base
+    px(c, stlOL, 35, 26, 1, 4); px(c, stlOL, 50, 26, 1, 4);
+    // --- Cintura (pescoço) ---
+    px(c, stlD, 40, 23, 7, 4); px(c, stlM, 41, 23, 5, 3);
+    px(c, stlX, 40, 26, 7, 1);
+    px(c, stlOL, 39, 23, 1, 4); px(c, stlOL, 47, 23, 1, 4);
+    // --- Mesa (topo de trabalho) em paralelogramo 3/4 ---
+    px(c, stlOL, 38, 16, 14, 1);                          // aresta traseira (contorno)
+    px(c, stlL, 38, 17, 14, 1);                           // face de topo (iluminada)
+    px(c, stlL, 37, 18, 15, 1);
+    px(c, stlL, 36, 19, 15, 1);
+    px(c, stlL, 35, 20, 15, 1);                           // aresta frontal do topo
+    px(c, spec, 36, 19, 3, 1);                            // brilho no topo
+    px(c, stlOL, 35, 20, 1, 1); px(c, stlOL, 36, 19, 1, 1); px(c, stlOL, 37, 18, 1, 1);
+    px(c, stlM, 35, 21, 15, 2);                           // face frontal (sombra)
+    px(c, stlD, 35, 22, 15, 1);
+    px(c, stlOL, 34, 20, 1, 3); px(c, stlOL, 50, 18, 1, 5);
+    // Chifre apontando p/ direita e um pouco pra cima (em 3/4).
+    px(c, stlL, 50, 17, 3, 1);                            // topo do chifre (luz)
+    px(c, stlM, 50, 18, 4, 2);                            // corpo
+    px(c, stlD, 51, 19, 3, 1);                            // sombra embaixo
+    px(c, stlL, 53, 17, 2, 1);                            // ponta iluminada
+    px(c, stlOL, 54, 17, 1, 3);
 
-    // Marreta encostada na bigorna (cabeça sobre a mesa, cabo p/ cima-direita).
-    px(c, woodM, 41, 12, 2, 7); px(c, woodL, 41, 12, 1, 7); px(c, woodX, 43, 13, 1, 5);
-    px(c, stlOL, 37, 14, 6, 4);
-    px(c, stlM, 38, 15, 4, 2); px(c, stlL, 38, 15, 4, 1); px(c, spec, 38, 15, 1, 1);
+    // Marreta apoiada sobre a mesa, cabeça pendendo na borda esquerda.
+    px(c, woodX, 40, 15, 1, 3); px(c, woodM, 38, 14, 2, 3); px(c, woodL, 38, 14, 1, 3); // cabo
+    px(c, stlOL, 32, 16, 6, 4);                           // cabeça (contorno)
+    px(c, stlM, 33, 17, 4, 2); px(c, stlL, 33, 17, 4, 1); px(c, spec, 33, 17, 1, 1);
 
-    return { built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43 };
+    return {
+      built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43,
+      fire: { x: 8, y: 23, w: 12, h: 16 } // região das chamas animadas (base embaixo)
+    };
+  }
+
+  // Chamas animadas da fornalha, desenhadas por cima do sprite (Building.draw).
+  // (fx,fy) = canto superior-esquerdo da região do fogo em coords de mundo;
+  // fw,fh = tamanho; base das chamas em fy+fh. Brilho pulsante + leito de
+  // brasas + línguas de fogo balançando (branco→amarelo→laranja→vermelho na
+  // ponta) + brasas subindo.
+  function drawForgeFire(ctx, fx, fy, fw, fh, time) {
+    var baseY = fy + fh, cx = fx + fw / 2;
+
+    // Brilho quente pulsante na frente da boca.
+    var gy = baseY - fh * 0.35;
+    var gr = fh * 0.85 + Math.sin(time * 9) * 2 + Math.sin(time * 21) * 1;
+    var g = ctx.createRadialGradient(cx, gy, 1, cx, gy, gr);
+    g.addColorStop(0, 'rgba(255,180,70,0.50)');
+    g.addColorStop(0.5, 'rgba(240,120,40,0.20)');
+    g.addColorStop(1, 'rgba(240,120,40,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - gr, gy - gr, gr * 2, gr * 2);
+
+    // Leito de brasas piscando na base.
+    for (var b = 0; b < fw; b += 2) {
+      ctx.fillStyle = (0.5 + 0.5 * Math.sin(time * 8 + b)) > 0.6 ? '#ffb24a' : '#c0501e';
+      ctx.fillRect(Math.round(fx + b), baseY - 1, 2, 1);
+    }
+
+    // Línguas de fogo animadas.
+    var tongues = [
+      { x: fx + fw * 0.32, w: 5, spd: 9,  ph: 0.0, hf: 0.95 },
+      { x: fx + fw * 0.55, w: 6, spd: 7,  ph: 2.1, hf: 1.05 },
+      { x: fx + fw * 0.45, w: 4, spd: 12, ph: 4.0, hf: 0.80 }
+    ];
+    for (var t = 0; t < tongues.length; t++) {
+      var tg = tongues[t];
+      var hh = fh * tg.hf * (0.78 + 0.22 * Math.sin(time * tg.spd + tg.ph));
+      for (var yy = 0; yy <= hh; yy++) {
+        var frac = yy / hh;
+        var w = Math.max(1, Math.round((1 - frac * frac) * tg.w));
+        var sway = Math.sin(time * (tg.spd * 0.6) + frac * 5 + tg.ph) * frac * 2.4
+                 + Math.sin(time * 3 + tg.ph) * frac * 1.2;
+        ctx.fillStyle = frac < 0.18 ? '#fff3c8' : frac < 0.42 ? '#ffcf3f'
+                      : frac < 0.72 ? '#f5882b' : '#d8461e';
+        ctx.fillRect(Math.round(tg.x - w / 2 + sway), Math.round(baseY - yy), w, 1);
+      }
+    }
+
+    // Núcleo branco-quente pulsando na base central.
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(time * 10);
+    ctx.fillStyle = '#fff6d8';
+    ctx.fillRect(Math.round(cx - 1), baseY - 3, 2, 3);
+    ctx.globalAlpha = 1;
+
+    // Brasas subindo e sumindo.
+    for (var e = 0; e < 5; e++) {
+      var life = (time * 0.6 + e * 0.2) % 1;
+      var ex = fx + 2 + ((e * 5 + 1) % (fw - 2)) + Math.sin(time * 2.5 + e * 2) * 1.6;
+      var ey = baseY - 1 - life * (fh + 8);
+      ctx.globalAlpha = Math.max(0, 1 - life) * 0.9;
+      ctx.fillStyle = e % 2 ? '#ffcf3f' : '#f5882b';
+      ctx.fillRect(Math.round(ex), Math.round(ey), 1, 1);
+    }
+    ctx.globalAlpha = 1;
   }
 
   function drawSiteMarker(ctx, x, y, w, h, time) {
@@ -815,6 +890,7 @@ var ASSETS = (function () {
     drawText: drawText,
     textWidth: textWidth,
     drawSiteMarker: drawSiteMarker,
+    drawForgeFire: drawForgeFire,
     drawPanel: drawPanel,
     drawSlot: drawSlot,
     drawInventoryGrid: drawInventoryGrid,

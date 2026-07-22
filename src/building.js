@@ -282,8 +282,13 @@ Building.prototype.draw = function (ctx, time) {
     if (this.state === 'building') {
       this.drawAssembly(ctx, time, sprite, topLeftX, topLeftY, baseY, area);
     } else {
-      // Construída: sprite completo + clarão de conclusão que some.
+      // Construída: sprite completo + chamas animadas na fornalha (se houver)
+      // + clarão de conclusão que some.
       ctx.drawImage(sprite.built, topLeftX, topLeftY);
+      if (sprite.fire) {
+        ASSETS.drawForgeFire(ctx, topLeftX + sprite.fire.x, topLeftY + sprite.fire.y,
+          sprite.fire.w, sprite.fire.h, time);
+      }
       if (this.buildFlash > 0 && typeof FX !== 'undefined') {
         FX.glow(ctx, this.x, baseY - sprite.h * 0.4, 44,
           'rgba(255,255,255,' + (this.buildFlash / 0.35 * 0.75).toFixed(3) + ')');

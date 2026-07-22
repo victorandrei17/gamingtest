@@ -338,6 +338,11 @@ então o jogo roda igual se ela for removida. `FX.init()` roda no bootstrap;
   estouro da ilha. Aplicado só ao mundo (HUD e vinheta ficam de fora).
 - **Vinheta + brilho quente** (`FX.drawVignette`): canvas pré-renderizado
   blitado sobre a tela (fora do shake) pra dar profundidade e clima de sol.
+- **Fogo da fornalha animado** (`ASSETS.drawForgeFire`): o sprite do Ferreiro
+  guarda só o vão escuro da boca (região `fire`); as chamas são desenhadas
+  vivas todo frame por cima quando a construção está pronta — línguas de fogo
+  balançando (branco→amarelo→laranja→vermelho), leito de brasas piscando,
+  brilho quente pulsante e brasas subindo.
 
 A cena de seleção (`drawSelect`) também foi repaginada sobre essa base: céu
 em gradiente com sol radiante e raios girando, nuvens derivando, colinas em
