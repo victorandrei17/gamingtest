@@ -464,52 +464,123 @@ var ASSETS = (function () {
   // Construções — { built, w, h, anchorX, anchorY }.
   // A área de obra (contorno tracejado) é desenhada por drawSiteMarker.
   // ------------------------------------------------------------------
-  // Estação do ferreiro: fornalha (esquerda) + bigorna grande com marreta (direita).
+  // Estação do ferreiro em pixel art aconchegante estilo storybook (referência:
+  // Little Witch in the Woods): leve perspectiva 3/4 (face frontal + topo
+  // iluminado + lateral em sombra), paleta quente, sombreado suave com luz
+  // vindo de cima-esquerda e o brilho alaranjado do fogo lambendo a pedra.
+  // 56x44, âncora nos pés (28,43) — dimensões preservadas p/ não mexer na
+  // colisão/animação de montagem.
   function createBlacksmith() {
     var m = makeCanvas(56, 44), c = m.ctx;
 
-    // Sombra no chão
-    px(c, 'rgba(26,28,44,0.35)', 4, 40, 48, 3);
+    // ---- Paleta local (quente, com contorno escuro-ameixa, não preto puro) ----
+    var OL = '#241a2b';                                   // contorno principal
+    var stL = '#c6b3a6', stM = '#9a867a', stD = '#6f5c52', stX = '#4c3d38'; // pedra
+    var mortar = '#57473f', stHi = '#ad998d';             // rejunte / realce de tijolo
+    var brickA = '#9c6a5a', brickB = '#87584b';           // tijolos quentes ocasionais
+    var woodL = '#b07a44', woodM = '#835330', woodD = '#5c391d', woodX = '#3f2614';
+    var stlL = '#d2dbe6', stlM = '#98a4b6', stlD = '#616d82', stlX = '#3c4458';
+    var stlOL = '#262f3e', spec = '#ffffff'; // aço (frio, contrasta com o calor)
+    var fRed = '#d8461e', fOr = '#f5882b', fYel = '#ffcf3f', fCore = '#fff2c2';
+    var glowA = 'rgba(245,140,50,0.34)', glowB = 'rgba(245,140,50,0.20)';
+    var ironD = '#2c2838', ironM = '#413c52', ironL = '#544d68';
 
-    // ---- Fornalha (esquerda) ----
-    px(c, PAL.black, 2, 8, 22, 34);            // contorno
-    px(c, PAL.grayDark, 3, 9, 20, 32);         // pedra
-    px(c, PAL.gray, 4, 11, 18, 1);             // fiadas de tijolo
-    px(c, PAL.gray, 4, 18, 18, 1);
-    px(c, PAL.gray, 4, 33, 18, 1);
-    px(c, PAL.black, 6, 2, 10, 8);             // chaminé
-    px(c, PAL.grayDark, 7, 3, 8, 6);
-    px(c, PAL.black, 7, 23, 12, 15);           // boca da fornalha
-    px(c, '#e05a2a', 8, 26, 10, 11);           // fogo
-    px(c, PAL.bronze, 9, 29, 8, 8);
-    px(c, '#f6c84c', 10, 31, 6, 5);
-    px(c, PAL.white, 12, 33, 2, 2);
-    px(c, '#e05a2a', 8, 21, 10, 2);            // brilho acima da boca
-    px(c, PAL.bronze, 9, 0, 3, 2);             // brasa na chaminé
+    // ---- Sombras de contato no chão ----
+    px(c, 'rgba(20,16,30,0.26)', 3, 41, 24, 2);
+    px(c, 'rgba(20,16,30,0.18)', 2, 40, 26, 1);
+    px(c, 'rgba(20,16,30,0.26)', 32, 41, 22, 2);
+    px(c, 'rgba(20,16,30,0.18)', 33, 40, 20, 1);
 
-    // ---- Bigorna (direita), sobre um cepo de madeira ----
-    px(c, PAL.trunkDark, 33, 34, 17, 9);       // cepo
-    px(c, PAL.trunk, 34, 35, 15, 6);
-    px(c, PAL.trunkDark, 39, 36, 1, 5);
-    px(c, PAL.black, 32, 29, 19, 5);           // pé da bigorna
-    px(c, PAL.grayDark, 33, 30, 17, 3);
-    px(c, PAL.gray, 33, 30, 17, 1);
-    px(c, PAL.black, 38, 24, 9, 6);            // cintura
-    px(c, PAL.grayDark, 39, 25, 7, 5);
-    px(c, PAL.black, 30, 17, 24, 8);           // mesa (topo) + contorno
-    px(c, PAL.grayDark, 31, 18, 22, 6);
-    px(c, PAL.gray, 31, 18, 22, 1);            // brilho do topo
-    px(c, PAL.grayDark, 53, 19, 3, 3);         // chifre (à direita)
-    px(c, PAL.grayDark, 55, 20, 1, 1);
+    // ================= FORNALHA (esquerda) =================
+    // Lateral esquerda (parede em sombra) + contorno.
+    px(c, OL, 2, 12, 1, 30);
+    px(c, stX, 3, 13, 2, 28);
+    // Face frontal (pedra).
+    px(c, stM, 5, 13, 20, 28);
+    px(c, stD, 23, 13, 2, 28);                 // sombra na borda direita
+    px(c, OL, 25, 13, 1, 29);                  // contorno direito
+    px(c, OL, 3, 41, 23, 1);                   // base
+    // Face de topo em 3/4 (recua p/ cima-direita, iluminada).
+    px(c, OL, 10, 7, 16, 1);                   // aresta traseira
+    px(c, stL, 10, 8, 16, 1);
+    px(c, stL, 9, 9, 17, 1);
+    px(c, stL, 8, 10, 18, 1);
+    px(c, stL, 7, 11, 19, 1);
+    px(c, stL, 6, 12, 19, 1);
+    px(c, stD, 6, 13, 19, 1);                  // lábio de sombra sob o topo
+    px(c, OL, 5, 12, 1, 1); px(c, OL, 6, 11, 1, 1); px(c, OL, 7, 10, 1, 1);
+    px(c, OL, 8, 9, 1, 1);  px(c, OL, 9, 8, 1, 1);   // contorno da diagonal esq.
 
-    // ---- Marreta apoiada em cima da bigorna ----
-    px(c, PAL.black, 31, 11, 9, 7);            // cabeça (contorno)
-    px(c, PAL.grayDark, 32, 12, 7, 5);
-    px(c, PAL.gray, 32, 12, 7, 1);
-    px(c, PAL.iron, 32, 12, 2, 4);
-    px(c, PAL.trunkDark, 39, 11, 2, 3);        // cabo (diagonal p/ cima-direita)
-    px(c, PAL.trunk, 40, 8, 2, 3);
-    px(c, PAL.trunk, 41, 5, 2, 3);
+    // Fiadas de tijolo (rejunte escuro + topo do tijolo iluminado).
+    var rows = [17, 22, 27, 32, 37];
+    for (var ri = 0; ri < rows.length; ri++) {
+      px(c, mortar, 5, rows[ri], 20, 1);
+      px(c, stHi, 5, rows[ri] + 1, 20, 1);
+    }
+    // Juntas verticais escalonadas (só na parte de cima, longe da boca).
+    px(c, mortar, 12, 13, 1, 4); px(c, mortar, 18, 13, 1, 4);
+    px(c, mortar, 9, 17, 1, 4);  px(c, mortar, 15, 17, 1, 4); px(c, mortar, 21, 17, 1, 4);
+    // Tijolos quentes de destaque (variação de cor).
+    px(c, brickA, 6, 14, 5, 2); px(c, brickB, 19, 18, 4, 3);
+    px(c, brickA, 6, 33, 3, 3); px(c, brickB, 20, 37, 4, 3);
+
+    // Exaustor de ferro + cano sobre o topo.
+    px(c, ironD, 8, 6, 9, 3);  px(c, ironM, 9, 6, 7, 1);
+    px(c, ironD, 9, 3, 5, 3);  px(c, ironL, 9, 3, 1, 3); px(c, '#201d2b', 13, 3, 1, 3);
+    px(c, OL, 8, 2, 6, 1);
+    px(c, '#ffb24a', 10, 1, 2, 1);                        // brasa na saída
+    px(c, 'rgba(255,180,80,0.5)', 9, 0, 4, 1);
+
+    // Boca da fornalha (arco escuro) + fogo + brilho na pedra.
+    px(c, glowA, 7, 22, 14, 1); px(c, glowB, 6, 23, 1, 16); px(c, glowB, 20, 23, 1, 16);
+    px(c, glowA, 8, 39, 12, 1);
+    // barra/lintel de ferro sobre a boca
+    px(c, stlX, 7, 20, 14, 2); px(c, '#8894a6', 7, 20, 14, 1);
+    px(c, '#180f1e', 8, 22, 12, 18);                      // vão escuro
+    px(c, stM, 8, 22, 1, 1); px(c, stM, 19, 22, 1, 1);    // cantos arredondados
+    px(c, fRed, 9, 25, 10, 14);                           // fogo (do vermelho ao branco)
+    px(c, fOr, 10, 28, 8, 11);
+    px(c, fYel, 11, 31, 6, 8);
+    px(c, fCore, 12, 34, 4, 4);
+    px(c, spec, 13, 36, 2, 2);
+    px(c, fOr, 11, 24, 2, 2); px(c, fYel, 14, 25, 2, 1); px(c, fRed, 16, 24, 2, 2); // labaredas
+
+    // ================= BIGORNA + CEPO (direita) =================
+    // Cepo de madeira: topo em 3/4 (iluminado) + frente com veios.
+    px(c, woodD, 33, 31, 18, 1);
+    px(c, woodL, 34, 31, 16, 3);
+    px(c, '#c68e52', 35, 31, 13, 1);                      // realce do topo
+    px(c, woodX, 33, 34, 1, 8); px(c, woodX, 50, 34, 1, 8);
+    px(c, woodM, 34, 34, 16, 8);
+    px(c, woodL, 34, 34, 1, 7);                           // luz na aresta esquerda
+    px(c, woodD, 37, 34, 1, 7); px(c, woodD, 42, 35, 1, 6); px(c, woodD, 47, 34, 1, 7); // veios
+    px(c, woodX, 34, 41, 16, 1);                          // sombra na base
+
+    // Sombra de contato da bigorna no topo do cepo.
+    px(c, 'rgba(20,16,30,0.30)', 35, 30, 15, 1);
+
+    // Bigorna de aço frio (contrasta com o calor da cena), luz de cima.
+    // Mesa (topo) com chifre à direita.
+    px(c, stlOL, 32, 17, 21, 1);
+    px(c, stlM, 33, 18, 19, 5);
+    px(c, stlL, 33, 18, 19, 1);                           // face de topo iluminada
+    px(c, stlL, 33, 18, 1, 4); px(c, spec, 34, 18, 2, 1); // brilho canto frontal-esq
+    px(c, stlD, 33, 22, 19, 1);                           // sombra sob a mesa
+    px(c, stlM, 52, 19, 3, 2); px(c, stlL, 52, 19, 2, 1); // chifre
+    px(c, stlOL, 55, 20, 1, 1);
+    // Cintura.
+    px(c, stlD, 40, 23, 6, 5); px(c, stlM, 41, 23, 4, 4); px(c, stlX, 40, 27, 6, 1);
+    // Base/pés.
+    px(c, stlOL, 34, 28, 18, 1);
+    px(c, stlM, 35, 28, 16, 4);
+    px(c, stlL, 35, 28, 16, 1);
+    px(c, stlX, 35, 31, 16, 1);
+    px(c, stlOL, 34, 32, 18, 1);
+
+    // Marreta encostada na bigorna (cabeça sobre a mesa, cabo p/ cima-direita).
+    px(c, woodM, 41, 12, 2, 7); px(c, woodL, 41, 12, 1, 7); px(c, woodX, 43, 13, 1, 5);
+    px(c, stlOL, 37, 14, 6, 4);
+    px(c, stlM, 38, 15, 4, 2); px(c, stlL, 38, 15, 4, 1); px(c, spec, 38, 15, 1, 1);
 
     return { built: m.canvas, w: 56, h: 44, anchorX: 28, anchorY: 43 };
   }
